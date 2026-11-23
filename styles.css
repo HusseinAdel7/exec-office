@@ -1662,3 +1662,8 @@ a.dz-stat:hover { background: rgba(255,255,255,.18); transform: translateY(-2px)
 .wa-log-h { margin: 6px 0 0; font-size: 1rem; color: var(--ink); }
 .wa-log td { vertical-align: top; }
 .wa-log .wa-body { max-width: 460px; white-space: normal; line-height: 1.6; color: var(--ink); }
+
+/* عناصر اليوم المنجزة في جدول المدير */
+.dz-ev.is-done .dz-dot { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.dz-donechip { display: inline-flex; align-items: center; gap: 4px; margin-inline-start: 8px; vertical-align: middle; font-size: .8rem; font-weight: 700; color: var(--ok); background: var(--ok-soft); padding: 2px 8px; border-radius: 999px; }
+.dz-body b:has(.dz-donechip) { white-space: normal; }

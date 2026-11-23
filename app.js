@@ -324,13 +324,41 @@ function setStatus() {
   } else { el.textContent = '💾 على هذا الجهاز فقط'; el.className = 'sync'; }
 }
 
+// النسخة المنشورة (GitHub Pages): بنضيف العناصر اللي اتنشرت في published.json
+// (لو العنصر موجود على الجهاز ومتعدّل بعد النشر، بنسيب نسخة الجهاز)
+async function mergePublished() {
+  if (location.protocol === 'file:') return;
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 4000);
+    const res = await fetch('published.json', { cache: 'no-cache', signal: ctl.signal });
+    clearTimeout(t);
+    if (!res.ok) return;
+    const pub = await res.json();
+    let n = 0;
+    for (const [mod, list] of Object.entries((pub && pub.items) || {})) {
+      if (!MODULES[mod] || !Array.isArray(list)) continue;
+      const arr = DB.items[mod] || (DB.items[mod] = []);
+      for (const raw of list) {
+        if (!raw || !raw.id) continue;
+        const item = normItem(mod, raw);
+        const i = arr.findIndex((x) => x.id === item.id);
+        n++;
+        if (i < 0) arr.push(item);
+        else if ((item.updated || '') > (arr[i].updated || '')) arr[i] = item;
+      }
+    }
+    return n;
+  } catch { return 0; /* لا يوجد ملف منشور */ }
+}
+
 async function initStore() {
   let dbApi = null;
   try { if (window.claude && window.claude.use) dbApi = await window.claude.use('db'); } catch { dbApi = null; }
   if (!dbApi) {
     const srv = await probeServer();
     if (srv) { try { await serverStart(srv); return; } catch (e) { console.error(e); } }
-    Store.mode = 'local'; DB = loadLocal(); Store.ready = true;
+    Store.mode = 'local'; DB = loadLocal(); if (await mergePublished() && state.view === 'lobby') state.view = 'director'; Store.ready = true;
     render(); afterReady(); return;
   }
   Store.mode = 'cloud'; Store.db = dbApi;
@@ -2707,12 +2735,12 @@ function renderDirector() {
   const ev = [];
   for (const mod of ['meetings', 'cases', 'travel', 'tasks']) {
     const m = MODULES[mod];
-    for (const i of scope(mod)) if (!isDone(mod, i) && i[m.dateField]) ev.push({ mod, i, date: i[m.dateField], time: (m.timeField && i[m.timeField]) || '' });
+    for (const i of scope(mod)) if (i[m.dateField] && (!isDone(mod, i) || i[m.dateField] === t)) ev.push({ mod, i, date: i[m.dateField], time: (m.timeField && i[m.timeField]) || '', done: isDone(mod, i) });
   }
   const byD = (a, b) => (a.date + (a.time || '00:00')).localeCompare(b.date + (b.time || '00:00'));
   const today = ev.filter((e) => e.date === t && e.mod !== 'tasks').sort(byD);
-  const week = ev.filter((e) => e.date > t && e.date <= addDays(t, 7) && e.mod !== 'tasks').sort(byD);
-  const hot = ev.filter((e) => e.i.priority === 'urgent' || e.date < t).sort(byD);
+  const week = ev.filter((e) => !e.done && e.date > t && e.date <= addDays(t, 7) && e.mod !== 'tasks').sort(byD);
+  const hot = ev.filter((e) => !e.done).filter((e) => e.i.priority === 'urgent' || e.date < t).sort(byD);
   const calls = scope('calls').filter((i) => i.status === 'بانتظار الرد' && (!i.forWhom || /مدير|شيخ/.test(i.forWhom)));
   const renew = scope('contracts').filter((c) => !isDone('contracts', c) && c.endDate && c.endDate <= addDays(t, 45)).sort((a, b) => a.endDate.localeCompare(b.endDate));
   const [ma, mb] = monthRange();
@@ -2728,10 +2756,10 @@ function renderDirector() {
     let out = '';
     for (const e of list) {
       if (!placed && e.date === t && e.time && e.time >= now) { out += `<div class="dz-now"><span>الآن · ${esc(fmtTime(now))}</span></div>`; placed = true; }
-      out += `<button class="dz-ev ${alertLevel(e.mod, e.i)}" data-act="view" data-mod="${e.mod}" data-id="${esc(e.i.id)}" style="--k:${esc(company(e.i.company).color)}">
+      out += `<button class="dz-ev ${alertLevel(e.mod, e.i)}${e.done ? ' is-done' : ''}" data-act="view" data-mod="${e.mod}" data-id="${esc(e.i.id)}" style="--k:${esc(company(e.i.company).color)}">
         <span class="dz-time">${e.time ? `<b>${esc(fmtTime(e.time).replace(/ [صم]$/, ''))}</b><small>${fmtTime(e.time).slice(-1) === 'ص' ? 'ص' : 'م'}</small>` : '<b class="sm">طوال اليوم</b>'}${showDay ? `<em>${esc(relDay(e.date))}</em>` : ''}</span>
         <span class="dz-dot">${ic(MOD_SVG[e.mod], 'sm')}</span>
-        <span class="dz-body"><b>${esc(titleOf(e.mod, e.i))}</b><small>${esc(MODULES[e.mod].one)}${e.i.with ? ' · مع ' + esc(e.i.with) : ''}${e.i.court ? ' · ' + esc(e.i.court) : ''}${e.i.location ? ' · ' + esc(e.i.location) : ''}</small>${coDot(e.i.company)}</span>
+        <span class="dz-body"><b>${esc(titleOf(e.mod, e.i))}${e.done ? `<span class="dz-donechip">${ic('check', 'sm')}${esc(e.i.status)}</span>` : ''}</b><small>${esc(MODULES[e.mod].one)}${e.i.with ? ' · مع ' + esc(e.i.with) : ''}${e.i.court ? ' · ' + esc(e.i.court) : ''}${e.i.location ? ' · ' + esc(e.i.location) : ''}</small>${coDot(e.i.company)}</span>
       </button>`;
     }
     if (!placed) out += `<div class="dz-now"><span>الآن · ${esc(fmtTime(now))}</span></div>`;
