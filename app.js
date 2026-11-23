@@ -64,7 +64,8 @@ const money = (v) => (v ? Number(v).toLocaleString('ar-EG') + ' ج.م' : '');
 /* ---------------- modules ---------------- */
 const MODULES = {
   meetings: {
-    label: 'الاجتماعات والمواعيد', one: 'موعد', icon: '📅', dateField: 'date', timeField: 'time', warnDays: 1,
+    label: 'الاجتماعات والمواعيد', one: 'موعد', icon: '📅', dateField: 'date', timeField: 'time', warnDays: 1, repeatable: true,
+    defaults: () => ({ repeat: 'لا يتكرر' }),
     done: ['تم', 'ملغى'],
     fields: [
       { k: 'title', l: 'الموضوع', req: 1, list: 1 },
@@ -74,12 +75,13 @@ const MODULES = {
       { k: 'with', l: 'مع من', list: 1 },
       { k: 'location', l: 'المكان / الرابط' },
       { k: 'status', l: 'الحالة', t: 'select', opts: ['مجدول', 'مؤكد', 'تم', 'مؤجل', 'ملغى'], list: 1 },
+      { k: 'repeat', l: 'التكرار', t: 'select', opts: ['لا يتكرر', 'يومياً', 'أسبوعياً', 'كل أسبوعين', 'شهرياً', 'كل 3 شهور', 'سنوياً'] },
       { k: 'notes', l: 'ملاحظات / أجندة الاجتماع', t: 'textarea' },
     ],
     msg: (i) => `تذكير: ${i.type || 'اجتماع'} "${i.title}"\nيوم ${fmtDate(i.date)}${i.time ? ' الساعة ' + fmtTime(i.time) : ''}${i.with ? '\nمع: ' + i.with : ''}${i.location ? '\nالمكان: ' + i.location : ''}`,
   },
   cases: {
-    label: 'القضايا والجلسات', one: 'قضية', icon: '⚖️', dateField: 'nextHearing', warnDays: 3,
+    label: 'القضايا والجلسات', one: 'قضية', icon: '⚖️', dateField: 'nextHearing', timeField: 'hearingTime', warnDays: 3,
     done: ['صدر الحكم', 'مشطوبة', 'منتهية'],
     fields: [
       { k: 'caseNo', l: 'رقم القضية / السنة', list: 1 },
@@ -89,11 +91,12 @@ const MODULES = {
       { k: 'court', l: 'المحكمة', list: 1 },
       { k: 'circuit', l: 'الدائرة' },
       { k: 'nextHearing', l: 'الجلسة القادمة', t: 'date', list: 1 },
+      { k: 'hearingTime', l: 'ساعة الجلسة', t: 'time', list: 1 },
       { k: 'lawyer', l: 'المحامي المسؤول', list: 1 },
       { k: 'status', l: 'الحالة', t: 'select', opts: ['متداولة', 'محجوزة للحكم', 'خبير', 'استئناف', 'صدر الحكم', 'مشطوبة', 'منتهية'], list: 1 },
       { k: 'notes', l: 'آخر قرار / المطلوب للجلسة القادمة', t: 'textarea' },
     ],
-    msg: (i) => `تذكير جلسة: ${i.caseNo ? 'قضية رقم ' + i.caseNo + ' - ' : ''}${i.title}${i.court ? '\nالمحكمة: ' + i.court : ''}${i.circuit ? ' - الدائرة ' + i.circuit : ''}${i.nextHearing ? '\nالجلسة: ' + fmtDate(i.nextHearing) : ''}${i.lawyer ? '\nالمحامي: ' + i.lawyer : ''}${i.notes ? '\nالمطلوب: ' + i.notes : ''}`,
+    msg: (i) => `تذكير جلسة: ${i.caseNo ? 'قضية رقم ' + i.caseNo + ' - ' : ''}${i.title}${i.court ? '\nالمحكمة: ' + i.court : ''}${i.circuit ? ' - الدائرة ' + i.circuit : ''}${i.nextHearing ? '\nالجلسة: ' + fmtDate(i.nextHearing) : ''}${i.hearingTime ? ' الساعة ' + fmtTime(i.hearingTime) : ''}${i.lawyer ? '\nالمحامي: ' + i.lawyer : ''}${i.notes ? '\nالمطلوب: ' + i.notes : ''}`,
   },
   travel: {
     label: 'الرحلات', one: 'رحلة', icon: '✈️', dateField: 'departDate', warnDays: 3,
@@ -113,6 +116,7 @@ const MODULES = {
   },
   contracts: {
     label: 'العقود', one: 'عقد', icon: '📝', dateField: 'endDate', warnDays: 30,
+    defaults: () => ({ remindDays: '30 يوماً', renewal: 'يدوي' }),
     done: ['منتهي', 'ملغى'],
     fields: [
       { k: 'title', l: 'اسم العقد', req: 1, list: 1 },
@@ -122,6 +126,7 @@ const MODULES = {
       { k: 'startDate', l: 'تاريخ البداية', t: 'date' },
       { k: 'endDate', l: 'تاريخ الانتهاء', t: 'date', list: 1 },
       { k: 'renewal', l: 'التجديد', t: 'select', opts: ['يدوي', 'تلقائي', 'بدون تجديد'] },
+      { k: 'remindDays', l: 'تذكير التجديد قبل الانتهاء بـ', t: 'select', opts: ['15 يوماً', '30 يوماً', '60 يوماً', '90 يوماً'] },
       { k: 'status', l: 'الحالة', t: 'select', opts: ['مسودة', 'قيد المراجعة', 'بانتظار التوقيع', 'ساري', 'منتهي', 'ملغى'], list: 1 },
       { k: 'notes', l: 'ملاحظات / مكان النسخة الأصلية', t: 'textarea' },
     ],
@@ -142,7 +147,8 @@ const MODULES = {
     msg: (i) => `طلب موافقة: ${i.title}${i.requestedBy ? '\nمقدم من: ' + i.requestedBy : ''}${i.amount ? '\nالمبلغ: ' + money(i.amount) : ''}${i.dueDate ? '\nمطلوب قبل: ' + fmtDate(i.dueDate) : ''}${i.notes ? '\n' + i.notes : ''}`,
   },
   tasks: {
-    label: 'التنبيهات والمهام', one: 'تنبيه', icon: '🔔', dateField: 'dueDate', timeField: 'time', warnDays: 1,
+    label: 'التنبيهات والمهام', one: 'تنبيه', icon: '🔔', dateField: 'dueDate', timeField: 'time', warnDays: 1, repeatable: true,
+    defaults: () => ({ repeat: 'لا يتكرر' }),
     done: ['منجزة', 'ملغاة'],
     fields: [
       { k: 'title', l: 'المهمة / التنبيه', req: 1, list: 1 },
@@ -150,6 +156,7 @@ const MODULES = {
       { k: 'time', l: 'الساعة', t: 'time', list: 1 },
       { k: 'assignee', l: 'المسؤول', list: 1 },
       { k: 'status', l: 'الحالة', t: 'select', opts: ['مفتوحة', 'جارية', 'منجزة', 'ملغاة'], list: 1 },
+      { k: 'repeat', l: 'التكرار', t: 'select', opts: ['لا يتكرر', 'يومياً', 'أسبوعياً', 'كل أسبوعين', 'شهرياً', 'كل 3 شهور', 'سنوياً'] },
       { k: 'notes', l: 'تفاصيل', t: 'textarea' },
     ],
     msg: (i) => `تنبيه: ${i.title}${i.dueDate ? '\nالموعد: ' + fmtDate(i.dueDate) : ''}${i.time ? ' الساعة ' + fmtTime(i.time) : ''}${i.notes ? '\n' + i.notes : ''}`,
@@ -169,6 +176,25 @@ const MODULES = {
       { k: 'notes', l: 'الرسالة / الموضوع', t: 'textarea' },
     ],
     msg: (i) => `رسالة: ${i.kind || 'مكالمة'} من ${i.caller}${i.phone ? '\nرقم الهاتف: ' + i.phone : ''}${i.date ? '\n' + fmtDate(i.date) : ''}${i.time ? ' الساعة ' + fmtTime(i.time) : ''}${i.notes ? '\nالموضوع: ' + i.notes : ''}${i.status === 'بانتظار الرد' ? '\n⚠️ بانتظار الرد' : ''}`,
+  },
+  finance: {
+    label: 'المصروفات والإيرادات', one: 'حركة مالية', icon: '💰', dateField: 'date', warnDays: 3, noPriority: true,
+    done: ['مدفوع'],
+    filterLabels: ['المستحقة', 'المتأخرة', 'المدفوعة', 'الكل'],
+    defaults: () => ({ date: todayStr(), type: 'مصروف', status: 'مدفوع', method: 'نقدي' }),
+    fields: [
+      { k: 'type', l: 'النوع', t: 'select', opts: ['مصروف', 'إيراد'], req: 1, list: 1 },
+      { k: 'title', l: 'البيان', req: 1, list: 1 },
+      { k: 'amount', l: 'المبلغ (ج.م)', t: 'number', req: 1, list: 1 },
+      { k: 'date', l: 'التاريخ / تاريخ الاستحقاق', t: 'date', req: 1, list: 1 },
+      { k: 'category', l: 'البند', t: 'select', opts: ['إيجار', 'رواتب', 'أتعاب محاماة', 'مرافق (كهرباء ومياه وإنترنت)', 'صيانة', 'ضرائب ورسوم', 'مواصلات وسفر', 'مستلزمات مكتبية', 'تسويق', 'عمولات', 'مبيعات', 'تحصيلات', 'أخرى'], list: 1 },
+      { k: 'party', l: 'الجهة / الطرف', list: 1 },
+      { k: 'method', l: 'طريقة الدفع', t: 'select', opts: ['نقدي', 'تحويل بنكي', 'شيك', 'بطاقة', 'محفظة إلكترونية'] },
+      { k: 'refNo', l: 'رقم الإيصال / الفاتورة' },
+      { k: 'status', l: 'الحالة', t: 'select', opts: ['مدفوع', 'مستحق'], list: 1 },
+      { k: 'notes', l: 'ملاحظات', t: 'textarea' },
+    ],
+    msg: (i) => `${i.type || 'مصروف'}: ${i.title}\nالمبلغ: ${money(i.amount)}${i.date ? '\nالتاريخ: ' + fmtDate(i.date) : ''}${i.party ? '\nالجهة: ' + i.party : ''}${i.category ? '\nالبند: ' + i.category : ''}\nالحالة: ${i.status || ''}`,
   },
   contacts: {
     label: 'جهات الاتصال', one: 'جهة اتصال', icon: '👥', titleKey: 'name', noPriority: true, done: [],
@@ -235,6 +261,10 @@ function dbErrMsg(e) {
   if (c === 'quota_exceeded') return 'المساحة ممتلئة — احذف بعض العناصر القديمة وحاول مرة أخرى';
   if (c === 'invalid_argument' || c === 'not_granted') return 'ليست لديك صلاحية التعديل هنا';
   if (c === 'revoked') return 'تم سحب الصلاحية — أعد فتح الصفحة';
+  if (c === 'offline') return 'تعذّر الاتصال بالسيرفر — تأكد أن السيرفر شغال والشبكة متصلة';
+  if (c === 'unauth') return 'انتهت الجلسة — سجّل الدخول مرة أخرى';
+  if (c === 'forbidden') return 'هذا الإجراء لمدير النظام فقط';
+  if (c === 'server' && e.message) return e.message;
   return 'حدثت مشكلة أثناء الحفظ — تحقّق من الاتصال وحاول مرة أخرى';
 }
 async function safe(fn, okMsg) {
@@ -242,9 +272,15 @@ async function safe(fn, okMsg) {
   catch (e) { console.error(e); toast(dbErrMsg(e)); return false; }
 }
 
-async function putItem(mod, obj) {
+async function putItemRaw(mod, obj) {
   obj = { ...obj, id: cleanId(obj.id) };
-  if (Store.mode === 'cloud') {
+  if (Store.mode === 'server') {
+    await api('PUT', `/api/items/${mod}/${encodeURIComponent(obj.id)}`, obj);
+    const arr = DB.items[mod];
+    const ix = arr.findIndex((x) => x.id === obj.id);
+    if (ix < 0) arr.push(obj); else arr[ix] = obj;
+    render();
+  } else if (Store.mode === 'cloud') {
     const { id, ...body } = obj;
     await Store.db.collection(mod).doc(id).set(body);
   } else {
@@ -255,14 +291,17 @@ async function putItem(mod, obj) {
   }
 }
 async function removeItem(mod, id) {
-  if (Store.mode === 'cloud') await Store.db.collection(mod).doc(id).delete();
+  if (Store.mode === 'server') { await api('DELETE', `/api/items/${mod}/${encodeURIComponent(id)}`); DB.items[mod] = DB.items[mod].filter((x) => x.id !== id); render(); }
+  else if (Store.mode === 'cloud') await Store.db.collection(mod).doc(id).delete();
   else { DB.items[mod] = DB.items[mod].filter((x) => x.id !== id); saveLocal(); render(); }
 }
 async function putCompanies(list) {
-  if (Store.mode === 'cloud') await Store.db.doc('config/main').set({ companies: list });
+  if (Store.mode === 'server') { await api('PUT', '/api/companies', { companies: list }); DB.companies = list; render(); }
+  else if (Store.mode === 'cloud') await Store.db.doc('config/main').set({ companies: list });
   else { DB.companies = list; saveLocal(); render(); }
 }
 async function replaceAll(data) {
+  if (Store.mode === 'server') { await api('POST', '/api/import', { companies: data.companies, items: data.items }); await serverLoad(); return; }
   if (Store.mode !== 'cloud') { DB = { ...data, attachments: DB.attachments || [] }; saveLocal(); render(); return; }
   await putCompanies(data.companies);
   for (const mod in MODULES) {
@@ -279,6 +318,9 @@ function setStatus() {
   if (Store.mode === 'cloud') {
     el.textContent = Store.stale ? '⚠️ تعذّر الاتصال' : '☁️ متزامن عبر الإنترنت';
     el.className = 'sync ' + (Store.stale ? 'warn' : 'ok');
+  } else if (Store.mode === 'server') {
+    el.textContent = Store.stale ? '⚠️ تعذّر الاتصال بالسيرفر' : '🗄️ متصل بقاعدة البيانات';
+    el.className = 'sync ' + (Store.stale ? 'warn' : 'ok');
   } else { el.textContent = '💾 على هذا الجهاز فقط'; el.className = 'sync'; }
 }
 
@@ -286,6 +328,8 @@ async function initStore() {
   let dbApi = null;
   try { if (window.claude && window.claude.use) dbApi = await window.claude.use('db'); } catch { dbApi = null; }
   if (!dbApi) {
+    const srv = await probeServer();
+    if (srv) { try { await serverStart(srv); return; } catch (e) { console.error(e); } }
     Store.mode = 'local'; DB = loadLocal(); Store.ready = true;
     render(); afterReady(); return;
   }
@@ -426,6 +470,7 @@ const ICONS = {
   danger: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
   phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
   chevR: '<path d="m9 18 6-6-6-6"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
@@ -434,7 +479,7 @@ const ICONS = {
   chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
 };
 const ic = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
-const MOD_SVG = { meetings: 'calendar', cases: 'scale', travel: 'plane', contracts: 'file', approvals: 'approve', tasks: 'bell', calls: 'phone', contacts: 'users' };
+const MOD_SVG = { finance: 'chart', meetings: 'calendar', cases: 'scale', travel: 'plane', contracts: 'file', approvals: 'approve', tasks: 'bell', calls: 'phone', contacts: 'users' };
 const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 function hijri(s) {
   try { return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(parseD(s)); }
@@ -594,6 +639,7 @@ function renderLobby() {
         <span class="pulse-dot ${total.hot.length ? 'hot' : ''}"></span>
         <span>${esc(sentence(total))}</span>
         <button class="link-btn" data-company="all">عرض جميع الشركات معاً ${ic('arrowL', 'sm')}</button>
+        <button class="link-btn" data-view="director">${ic('person', 'sm')}صفحة المدير</button>
       </div>
     </div>
     <div class="doors">${DB.companies.map(door).join('')}
@@ -609,16 +655,16 @@ function renderLobby() {
 }
 
 /* ---------- company space ---------- */
-const SHORT = { meetings: 'المواعيد', cases: 'القضايا', travel: 'الرحلات', contracts: 'العقود', approvals: 'الموافقات', tasks: 'المهام', calls: 'المكالمات', contacts: 'جهات الاتصال' };
+const SHORT = { finance: 'المالية', meetings: 'المواعيد', cases: 'القضايا', travel: 'الرحلات', contracts: 'العقود', approvals: 'الموافقات', tasks: 'المهام', calls: 'المكالمات', contacts: 'جهات الاتصال' };
 function sectionList() {
-  return [['overview', 'home', 'نظرة عامة'], ['calendar', 'week', 'التقويم'], ['attachments', 'clip', 'المرفقات'], ...Object.keys(MODULES).map((k) => [k, MOD_SVG[k], SHORT[k] || MODULES[k].label])];
+  return [['overview', 'home', 'نظرة عامة'], ['calendar', 'week', 'التقويم'], ['attachments', 'clip', 'المرفقات'], ['reports', 'chart', 'التقارير'], ...Object.keys(MODULES).map((k) => [k, MOD_SVG[k], SHORT[k] || MODULES[k].label])];
 }
 function renderSpace() {
   const c = spaceCo();
   const p = pulse(state.company);
   const sec = state.section || 'overview';
   const others = [ALL_CO, ...DB.companies].filter((x) => x.id !== c.id);
-  const body = sec === 'overview' ? renderOverview(p) : sec === 'calendar' ? renderCalendar() : sec === 'attachments' ? renderAttachments() : renderSection(sec);
+  const body = sec === 'overview' ? renderOverview(p) : sec === 'calendar' ? renderCalendar() : sec === 'attachments' ? renderAttachments() : sec === 'reports' ? renderReports() : renderSection(sec);
   return `<section class="space" style="--c:${esc(c.color)}">
     <header class="space-head">
       <button class="back-round" data-view="lobby" title="العودة إلى الشركات" aria-label="العودة إلى الشركات">${ic('arrowR')}</button>
@@ -669,7 +715,7 @@ function agendaItem(e) {
       <h4>${esc(titleOf(e.mod, i))}</h4>
       ${meta.length ? `<p>${esc(meta.join(' · '))}</p>` : ''}
     </div>
-    <div class="ag-flags">${i.priority === 'urgent' ? prBadge('urgent') : i.priority === 'important' ? prBadge('important') : ''}${i.status ? `<span class="badge">${esc(i.status)}</span>` : ''}</div>
+    <div class="ag-flags">${isRepeating(i) ? `<span class="badge rep">🔁 ${esc(i.repeat)}</span>` : ''}${i.priority === 'urgent' ? prBadge('urgent') : i.priority === 'important' ? prBadge('important') : ''}${i.status ? `<span class="badge">${esc(i.status)}</span>` : ''}</div>
   </article>`;
 }
 function miniRow(e, extra) {
@@ -742,13 +788,13 @@ function itemCard(mod, i) {
   const skip = ['status', m.dateField, m.timeField, m.titleKey || 'title', mod === 'travel' ? 'destination' : ''];
   const facts = m.fields.filter((f) => f.t !== 'textarea' && !skip.includes(f.k) && i[f.k]);
   const done = isDone(mod, i);
-  return `<article class="card ${lvl}">
+  return `<article class="card ${lvl}" data-act="view" data-mod="${mod}" data-id="${i.id}" tabindex="0">
     <div class="card-top">
       ${mod === 'contacts' ? `<span class="avatar" style="--c:${esc(company(i.company).color)}">${esc((i.name || '?').trim().charAt(0))}</span>` : dateTile(date)}
       <div class="card-main">
         <h4 data-act="edit" data-mod="${mod}" data-id="${i.id}" title="${esc(titleOf(mod, i))}">${esc(titleOf(mod, i))}</h4>
         <div class="card-sub">${date ? `<span>${esc(relDay(date))}</span>` : ''}${time ? `<span>${ic('clock', 'sm')}${esc(fmtTime(time))}</span>` : ''}${state.company === 'all' ? coTag(i.company) : ''}</div>
-        <div class="card-badges">${i.status ? `<span class="badge ${done ? 'st-done' : ''}">${esc(i.status)}</span>` : ''}${!m.noPriority && i.priority && i.priority !== 'normal' ? prBadge(i.priority) : ''}</div>
+        <div class="card-badges">${mod === 'finance' ? `<span class="badge ${i.type === 'إيراد' ? 'fin-in' : 'fin-out'}">${i.type === 'إيراد' ? '▲ إيراد' : '▼ مصروف'} ${esc(money(i.amount))}</span>` : ''}${i.status ? `<span class="badge ${done ? 'st-done' : ''}">${esc(i.status)}</span>` : ''}${isRepeating(i) ? `<span class="badge rep">🔁 ${esc(i.repeat)}</span>` : ''}${i.renewalOf ? '<span class="badge renew">📝 تجديد عقد</span>' : ''}${!m.noPriority && i.priority && i.priority !== 'normal' ? prBadge(i.priority) : ''}</div>
       </div>
     </div>
     ${facts.length ? `<dl class="facts">${facts.map((f) => `<div><dt>${esc(f.l.replace(/\s*\(.*\)$/, ''))}</dt><dd>${fmtVal(f, i[f.k])}</dd></div>`).join('')}</dl>` : ''}
@@ -763,11 +809,12 @@ function renderSection(mod) {
   const m = MODULES[mod];
   const all = sortItems(mod, filtered(mod));
   const open = all.filter((i) => !isDone(mod, i)).length;
+  const FL = m.filterLabels || ['المفتوحة', 'العاجل والمتأخر', 'المنجزة', 'الكل'];
   const FILTERS = [
-    ['open', 'المفتوحة', (i) => !isDone(mod, i)],
-    ['hot', 'العاجل والمتأخر', (i) => ['urgent', 'overdue'].includes(alertLevel(mod, i))],
-    ['done', 'المنجزة', (i) => isDone(mod, i)],
-    ['all', 'الكل', () => true],
+    ['open', FL[0], (i) => !isDone(mod, i)],
+    ['hot', FL[1], (i) => ['urgent', 'overdue'].includes(alertLevel(mod, i))],
+    ['done', FL[2], (i) => isDone(mod, i)],
+    ['all', FL[3], () => true],
   ];
   const useTabs = mod !== 'contacts' && all.length > 0;
   const fl = FILTERS.find((x) => x[0] === state.filter) || FILTERS[0];
@@ -776,10 +823,10 @@ function renderSection(mod) {
     <div class="sec-tools">${useTabs ? `<div class="tabs">${FILTERS.map(([k, l, fn]) => `<button class="tab ${fl[0] === k ? 'active' : ''}" data-filter="${k}">${l}<span class="pill">${all.filter(fn).length}</span></button>`).join('')}</div>` : ''}
     <button class="btn" data-act="csv" data-mod="${mod}">${ic('download')}Excel</button></div></div>`;
   if (!all.length) {
-    return head + `<div class="agenda-empty"><span class="big">${ic(MOD_SVG[mod])}</span><b>لا توجد ${m.label} بعد</b><span>ابدأ بإضافة أول ${m.one}</span><button class="btn primary" data-act="add" data-mod="${mod}">${ic('plus')}إضافة ${m.one}</button></div>`;
+    return head + (mod === 'finance' ? financeStrip(state.company) : '') + `<div class="agenda-empty"><span class="big">${ic(MOD_SVG[mod])}</span><b>لا توجد ${m.label} بعد</b><span>ابدأ بإضافة أول ${m.one}</span><button class="btn primary" data-act="add" data-mod="${mod}">${ic('plus')}إضافة ${m.one}</button></div>`;
   }
   if (!rows.length) return head + `<div class="agenda-empty"><span class="big">${ic('check')}</span><b>لا توجد عناصر</b><span>لا توجد ${m.label} ضمن هذا الفلتر</span></div>`;
-  return head + `<div class="cards">${rows.map((i) => itemCard(mod, i)).join('')}</div>`;
+  return head + (mod === 'finance' ? financeStrip(state.company) : '') + `<div class="cards">${rows.map((i) => itemCard(mod, i)).join('')}</div>`;
 }
 
 /* ---------- search ---------- */
@@ -900,6 +947,9 @@ function renderCalendar() {
 function renderSettings() {
   const total = Object.values(DB.items).reduce((s, a) => s + a.length, 0);
   return `<div class="page-head"><div><h2>${ic('settings')}الإعدادات والنسخ الاحتياطي</h2><div class="sub">الشركات التابعة للمدير، وحفظ البيانات</div></div></div>
+  ${Store.mode === 'server' ? renderServerSettings() : ''}
+  ${renderReminderSettings()}
+  ${renderBackupSettings()}
   <div class="set-section"><h3>${ic('building')}الشركات</h3>
     ${DB.companies.map((c) => `<div class="co-row">
       <input type="color" value="${esc(c.color)}" data-co-color="${esc(c.id)}">
@@ -908,7 +958,9 @@ function renderSettings() {
     <div class="btns"><button class="btn" data-act="addCo">${ic('plus')}إضافة شركة</button></div>
   </div>
   <div class="set-section"><h3>${ic('save')}النسخ الاحتياطي</h3>
-    <p class="note">${Store.mode === 'cloud'
+    <p class="note">${Store.mode === 'server'
+      ? `البيانات (${total} عنصراً) والمرفقات محفوظة في قاعدة بيانات SQL Server على السيرفر، ومتزامنة على كل الأجهزة. ويُنصح أيضاً بعمل نسخة احتياطية للقاعدة نفسها من SQL Server.`
+      : Store.mode === 'cloud'
       ? `البيانات (${total} عنصراً) محفوظة عبر الإنترنت ومتزامنة على جميع أجهزتك. ومع ذلك يُنصح <b>بتنزيل نسخة احتياطية كل أسبوع</b> وحفظها على Google Drive.`
       : `البيانات (${total} عنصراً) محفوظة في المتصفح على هذا الجهاز فقط. <b>احرص على تنزيل نسخة احتياطية كل أسبوع</b> وحفظها على Google Drive، ويمكنك استعادتها على أي جهاز آخر أو على النسخة الإلكترونية.`}</p>
     <p class="note">ملاحظة: النسخة الاحتياطية تحفظ بيانات المرفقات وأسماءها ومحتواها المستخرج، أما الملفات نفسها فتبقى محفوظة في النظام. احتفظ بنسخ أصلية من المستندات المهمة.</p>
@@ -929,12 +981,24 @@ function render() {
   const prevBody = document.querySelector('.space-body');
   const keep = { view: $('#view').scrollTop, body: prevBody ? prevBody.scrollTop : 0 };
   let html;
+  if (Store.mode === 'server' && Store.auth !== 'ok') {
+    document.body.dataset.screen = 'auth';
+    $('#view').innerHTML = renderAuth();
+    const f = document.querySelector('#authForm input');
+    if (f) f.focus();
+    return;
+  }
   if (state.q.trim() && state.view !== 'settings') html = renderSearch();
   else if (state.view === 'settings') html = `<section class="plain">${renderSettings()}</section>`;
   else if (state.view === 'space') html = renderSpace();
+  else if (state.view === 'director') html = renderDirector();
   else html = renderLobby();
   $('#view').innerHTML = html;
   if (document.querySelector('img[data-lazy-att]')) hydrateAttThumbs();
+  if (document.querySelector('#usersBox')) loadUsers();
+  if (document.querySelector('#waBox')) loadWa();
+  if (document.querySelector('#activityBox')) loadActivity();
+  if (document.querySelector('#backupBox')) loadBackupStatus();
   // ما تفقدش مكانك في الصفحة لما البيانات تتحدث، إلا لو انتقلت لشاشة تانية
   if (state.nav) {
     state.nav = false; $('#view').scrollTop = 0;
@@ -946,6 +1010,56 @@ function render() {
     const body = document.querySelector('.space-body');
     if (body) body.scrollTop = keep.body;
   }
+}
+
+/* ---------- item details (read view) ---------- */
+function openDetails(mod, id) {
+  const m = MODULES[mod];
+  const i = m && DB.items[mod].find((x) => x.id === id);
+  if (!i) return;
+  const done = isDone(mod, i);
+  const date = m.dateField && i[m.dateField];
+  const time = m.timeField && i[m.timeField];
+  const titleKey = m.titleKey || 'title';
+  const fmt = (f, v) => {
+    if (f.t === 'date') return `${esc(fmtDate(v))} <small>(${esc(relDay(v))})</small>`;
+    if (f.t === 'time') return esc(fmtTime(v));
+    if (f.t === 'number') return esc(money(v));
+    if (f.k === 'phone') return `<a href="${waLink('', v)}" target="_blank" rel="noopener" dir="ltr">${esc(v)}</a>`;
+    if (f.k === 'email') return `<a href="${gmailLink('', '', v)}" target="_blank" rel="noopener">${esc(v)}</a>`;
+    return esc(v);
+  };
+  const facts = m.fields.filter((f) => f.k !== titleKey && f.k !== 'status' && f.k !== m.dateField && f.k !== m.timeField && f.t !== 'textarea' && i[f.k]);
+  const notes = m.fields.filter((f) => f.t === 'textarea' && i[f.k]);
+  const msg = itemMessage(mod, i);
+  const cl = calLink(mod, i);
+  dlgOnSave = null;
+  $('#dlgForm').innerHTML = `<div class="dlg-head det-head" style="--c:${esc(company(i.company).color)}">
+      <span class="chipic">${ic(MOD_SVG[mod])}</span>
+      <div style="flex:1;min-width:0"><h3 class="clip1">${esc(titleOf(mod, i))}</h3><div class="small">${esc(m.one)} · ${esc(company(i.company).name)}</div></div>
+      <button value="cancel" class="dlg-x" formnovalidate title="إغلاق" aria-label="إغلاق">${ic('x')}</button></div>
+    <div class="dlg-body det-body">
+      <div class="det-top">
+        ${date ? `<div class="det-when">${dateTile(date)}<div><b>${esc(fmtDate(date))}</b><span>${esc(relDay(date))}${time ? ' · الساعة ' + esc(fmtTime(time)) : ''}</span></div></div>` : ''}
+        <div class="det-badges">${i.status ? `<span class="badge ${done ? 'st-done' : ''}">${esc(i.status)}</span>` : ''}${!m.noPriority && i.priority ? prBadge(i.priority) : ''}</div>
+      </div>
+      ${facts.length ? `<dl class="det-grid">${facts.map((f) => `<div><dt>${esc(f.l.replace(/\s*\(.*\)$/, ''))}</dt><dd>${fmt(f, i[f.k])}</dd></div>`).join('')}</dl>` : ''}
+      ${notes.map((f) => `<div class="det-notes"><b>${esc(f.l)}</b><p>${esc(i[f.k])}</p></div>`).join('')}
+      ${detExtras(mod, i)}
+      ${i.updated ? `<p class="det-meta">آخر تعديل: ${esc(new Date(i.updated).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }))}</p>` : ''}
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn primary" data-act="editFromDetails" data-mod="${mod}" data-id="${esc(i.id)}">${ic('edit')}تعديل</button>
+      ${m.done.length && !done ? `<button type="button" class="btn" data-act="doneFromDetails" data-mod="${mod}" data-id="${esc(i.id)}">${ic('check')}${esc(m.done[0])}</button>` : ''}
+      ${mod !== 'contacts' ? `<a class="btn" href="${waLink(msg)}" target="_blank" rel="noopener">${ic('wa')}واتساب</a>
+      <a class="btn" href="${gmailLink(`${m.icon} ${titleOf(mod, i)} — ${company(i.company).name}`, msg)}" target="_blank" rel="noopener">${ic('mail')}Gmail</a>
+      ${cl ? `<a class="btn" href="${cl}" target="_blank" rel="noopener">${ic('calplus')}التقويم</a>` : ''}
+      <button type="button" class="btn" data-act="copy" data-mod="${mod}" data-id="${esc(i.id)}">${ic('copy')}نسخ</button>` : ''}
+      ${mod === 'cases' ? `<button type="button" class="btn" data-act="addHearing" data-mod="cases" data-id="${esc(i.id)}">${ic('scale')}تسجيل جلسة</button>` : ''}
+      <button type="button" class="btn" data-act="attachTo" data-mod="${mod}" data-id="${esc(i.id)}">${ic('clip')}إرفاق ملف</button>
+      <button type="button" class="btn danger" data-act="delFromDetails" data-mod="${mod}" data-id="${esc(i.id)}">${ic('trash')}حذف</button>
+    </div>`;
+  if (!$('#dlg').open) $('#dlg').showModal();
 }
 
 /* ---------------- forms ---------------- */
@@ -1138,6 +1252,13 @@ const Files = {
   canUpload() { return Store.mode !== 'cloud' || this._api; },
   async put(file) {
     const type = (file.type || '').toLowerCase();
+    if (Store.mode === 'server') {
+      if (file.size > 50 * 1024 * 1024) throw { code: 'too_large' };
+      const fd = new FormData();
+      fd.append('file', file, file.name);
+      const r = await api('POST', '/api/files', fd, true);
+      return { assetId: r.id, wrapped: false, server: true };
+    }
     const native = NATIVE_TYPES.includes(type);
     if (native && file.size > MAX_NATIVE) throw { code: 'too_large' };
     if (!native && file.size > MAX_WRAPPED) throw { code: 'too_large' };
@@ -1155,6 +1276,11 @@ const Files = {
     return { assetId: key, wrapped: false, local: true };
   },
   async blob(a) {
+    if (isServerFile(a)) {
+      const res = await fetch('/api/files/' + encodeURIComponent(a.assetId), { credentials: 'same-origin' });
+      if (!res.ok) throw { code: 'missing' };
+      return await res.blob();
+    }
     if (a.local || (a.assetId || '').startsWith('f_')) {
       const b = await idbGet(a.assetId);
       if (!b) throw { code: 'missing' };
@@ -1167,12 +1293,14 @@ const Files = {
     return fromBase64(j.b64, j.type || a.fileType);
   },
   async url(a) {
+    if (isServerFile(a)) return '/api/files/' + encodeURIComponent(a.assetId);
     if (!a.local && !(a.assetId || '').startsWith('f_') && !a.wrapped) return '/_blob/' + a.assetId;
     return URL.createObjectURL(await this.blob(a));
   },
   async remove(a) {
     try {
-      if (a.local || (a.assetId || '').startsWith('f_')) await idbDel(a.assetId);
+      if (isServerFile(a)) await api('DELETE', '/api/files/' + encodeURIComponent(a.assetId));
+      else if (a.local || (a.assetId || '').startsWith('f_')) await idbDel(a.assetId);
       else { const api = await this.api(); if (api) await api.delete(a.assetId); }
     } catch (e) { console.warn('file delete', e); }
   },
@@ -1318,7 +1446,12 @@ async function aiRead(a) {
 /* ---------- data ---------- */
 async function putAtt(obj) {
   obj = { ...obj, id: cleanId(obj.id) };
-  if (Store.mode === 'cloud') {
+  if (Store.mode === 'server') {
+    await api('PUT', '/api/attachments/' + encodeURIComponent(obj.id), obj);
+    const ix = DB.attachments.findIndex((x) => x.id === obj.id);
+    if (ix < 0) DB.attachments.push(obj); else DB.attachments[ix] = obj;
+    render();
+  } else if (Store.mode === 'cloud') {
     const { id, ...body } = obj;
     await Store.db.collection('attachments').doc(id).set(body);
   } else {
@@ -1330,7 +1463,8 @@ async function putAtt(obj) {
 }
 async function removeAtt(a) {
   await Files.remove(a);
-  if (Store.mode === 'cloud') await Store.db.collection('attachments').doc(a.id).delete();
+  if (Store.mode === 'server') { await api('DELETE', '/api/attachments/' + encodeURIComponent(a.id)); DB.attachments = DB.attachments.filter((x) => x.id !== a.id); render(); }
+  else if (Store.mode === 'cloud') await Store.db.collection('attachments').doc(a.id).delete();
   else { DB.attachments = DB.attachments.filter((x) => x.id !== a.id); saveLocal(); render(); }
 }
 const attOf = (cid) => (DB.attachments || []).filter((a) => cid === 'all' || a.company === cid);
@@ -1480,7 +1614,7 @@ function attIcon(kind) { return { pdf: 'file', image: 'image', doc: 'file', shee
 const isLocalAtt = (a) => a.local || (a.assetId || '').startsWith('f_');
 function attThumb(a, kind) {
   return kind === 'image'
-    ? `<img ${isLocalAtt(a) ? '' : `src="/_blob/${esc(a.assetId)}"`} data-lazy-att="${esc(a.id)}" alt="" loading="lazy">`
+    ? `<img ${isLocalAtt(a) ? '' : `src="${isServerFile(a) ? '/api/files/' : '/_blob/'}${esc(a.assetId)}"`} data-lazy-att="${esc(a.id)}" alt="" loading="lazy">`
     : `<span class="ft-ic">${ic(attIcon(kind))}</span>`;
 }
 function attCard(a, match) {
@@ -1678,16 +1812,17 @@ async function hydrateAttThumbs() {
 }
 
 /* ---------- upload ---------- */
-function pickFiles() {
+function pickFiles(preset) {
   if (!Files.canUpload()) { toast('الرفع متاح لمالك النظام والمحررين فقط'); return; }
   const inp = document.createElement('input');
   inp.type = 'file'; inp.multiple = true;
-  inp.onchange = () => { if (inp.files.length) openUpload([...inp.files]); };
+  inp.onchange = () => { if (inp.files.length) openUpload([...inp.files], preset); };
   inp.click();
 }
-function openUpload(files) {
+function openUpload(files, preset) {
+  preset = preset || {};
   if (!files.length) return;
-  const cid = state.company !== 'all' ? state.company : DB.companies[0] && DB.companies[0].id;
+  const cid = preset.company || (state.company !== 'all' ? state.company : DB.companies[0] && DB.companies[0].id);
   const today = todayStr();
   dlgOnSave = null;
   $('#dlgForm').innerHTML = `<div class="dlg-head"><span class="chipic">${ic('upload')}</span><div style="flex:1"><h3>رفع ${files.length} ${files.length === 1 ? 'ملف' : 'ملفات'}</h3><div class="small">البيانات المشتركة تُطبّق على كل الملفات، ويمكنك تعديل اسم كل ملف</div></div>
@@ -1697,10 +1832,10 @@ function openUpload(files) {
         <input name="t_${i}" value="${esc(f.name.replace(/\.[^.]+$/, ''))}" aria-label="اسم الملف"><small>${esc(fmtSize(f.size))}</small></div>`).join('')}</div>
       <div class="grid">
         <div class="fld"><label>الشركة</label><select name="company">${DB.companies.map((c) => `<option value="${esc(c.id)}" ${c.id === cid ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
-        <div class="fld"><label>التصنيف</label><select name="category">${ATT_CATS.map((c) => `<option>${esc(c)}</option>`).join('')}</select></div>
+        <div class="fld"><label>التصنيف</label><select name="category">${ATT_CATS.map((c) => `<option ${c === preset.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
         <div class="fld"><label>تاريخ المستند</label><input type="date" name="docDate" value="${today}"></div>
-        <div class="fld"><label>الجهة / الطرف المعني</label><input name="party" list="dl-people" autocomplete="off"></div>
-        <div class="fld"><label>الرقم المرجعي</label><input name="refNo" placeholder="رقم العقد أو القضية أو الفاتورة"></div>
+        <div class="fld"><label>الجهة / الطرف المعني</label><input name="party" list="dl-people" autocomplete="off" value="${esc(preset.party || '')}"></div>
+        <div class="fld"><label>الرقم المرجعي</label><input name="refNo" value="${esc(preset.refNo || '')}" placeholder="رقم العقد أو القضية أو الفاتورة"></div>
         <div class="fld"><label>كلمات مفتاحية (مفصولة بفاصلة)</label><input name="tags" placeholder="مثال: إيجار، المقر الرئيسي"></div>
         <div class="fld full"><label>ملاحظات</label><textarea name="notes"></textarea></div>
       </div>
@@ -1708,10 +1843,10 @@ function openUpload(files) {
       <p class="note" style="margin-top:12px">سيتم استخراج النص من ملفات PDF وWord وExcel تلقائياً لتتمكن من البحث داخل محتواها.</p>
     </div>
     <div class="dlg-actions"><button value="save" class="btn primary">${ic('upload')}رفع وحفظ</button><button value="cancel" class="btn" formnovalidate>إلغاء</button></div>`;
-  dlgOnSave = (fd) => uploadAll(files, fd);
+  dlgOnSave = (fd) => uploadAll(files, fd, preset);
   $('#dlg').showModal();
 }
-async function uploadAll(files, fd) {
+async function uploadAll(files, fd, preset) {
   const base = {};
   for (const k of ['company', 'category', 'docDate', 'party', 'refNo', 'tags', 'notes']) base[k] = (fd.get(k) || '').toString().trim();
   const bar = $('#upbar');
@@ -1727,7 +1862,7 @@ async function uploadAll(files, fd) {
       const content = await extractText(f);
       await putAtt({
         id: uid(), ...base, title, fileName: f.name, fileType: f.type || '', size: f.size,
-        ...stored, content, created: new Date().toISOString(), updated: new Date().toISOString(),
+        ...stored, content, ...(preset && preset.link ? { link: preset.link } : {}), created: new Date().toISOString(), updated: new Date().toISOString(),
       });
       ok++;
     } catch (e) {
@@ -1921,6 +2056,776 @@ document.addEventListener('drop', (e) => {
 });
 
 
+/* ---------------- SQL Server mode (via the ASP.NET Core API) ----------------
+   لما الموقع يتفتح من السيرفر (http://جهاز-السيرفر:5080) البيانات بتروح لقاعدة SQL Server
+   مع تسجيل دخول، وبتتزامن بين الأجهزة كل 8 ثواني.
+------------------------------------------------------------------------------ */
+const isServerFile = (a) => a.server || (a.assetId || '').startsWith('sv_');
+async function api(method, url, body, isForm) {
+  const opt = { method, credentials: 'same-origin', headers: {} };
+  if (body !== undefined) {
+    if (isForm) opt.body = body;
+    else { opt.body = JSON.stringify(body); opt.headers['Content-Type'] = 'application/json'; }
+  }
+  let res;
+  try { res = await fetch(url, opt); } catch { throw { code: 'offline' }; }
+  if (res.status === 401 && !url.startsWith('/api/auth/')) {
+    Store.auth = 'login'; render();
+    throw { code: 'unauth' };
+  }
+  let data = null;
+  try { data = await res.json(); } catch { /* empty */ }
+  if (!res.ok) throw { code: res.status === 403 ? 'forbidden' : 'server', message: data && data.error };
+  return data;
+}
+async function probeServer() {
+  if (location.protocol === 'file:') return null;
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 2500);
+    const res = await fetch('/api/auth/status', { credentials: 'same-origin', signal: ctl.signal });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j && typeof j.hasUsers === 'boolean' ? j : null;
+  } catch { return null; }
+}
+async function serverStart(status) {
+  Store.mode = 'server';
+  Store.server = { user: status.user || null };
+  if (!status.hasUsers) { Store.auth = 'setup'; Store.ready = true; render(); return; }
+  if (!status.user) { Store.auth = 'login'; Store.ready = true; render(); return; }
+  await serverLoad();
+}
+async function serverLoad() {
+  const d = await api('GET', '/api/data');
+  const items = emptyItems();
+  for (const m in MODULES) items[m] = ((d.items && d.items[m]) || []).filter(Boolean).map((i) => normItem(m, i));
+  DB = { companies: d.companies && d.companies.length ? d.companies : structuredClone(DEFAULT_COMPANIES), items, attachments: (d.attachments || []).filter(Boolean) };
+  Store.serverTime = d.serverTime;
+  Store.auth = 'ok'; Store.stale = false;
+  if (!Store.loadedOnce && Store.server && Store.server.user && Store.server.user.role === 'director') state.view = 'director';
+  const first = !Store.ready || !Store.loadedOnce;
+  Store.ready = true; Store.loadedOnce = true;
+  render();
+  if (first) afterReady();
+  if (!Store.poll) Store.poll = setInterval(serverPoll, 8000);
+}
+async function serverPoll() {
+  if (Store.mode !== 'server' || Store.auth !== 'ok' || document.visibilityState === 'hidden' || Store.polling) return;
+  Store.polling = true;
+  try {
+    const d = await api('GET', '/api/changes?since=' + encodeURIComponent(Store.serverTime));
+    let changed = false;
+    if (d.companies) { DB.companies = d.companies.length ? d.companies : DB.companies; changed = true; }
+    for (const ch of d.items || []) {
+      if (!MODULES[ch.mod]) continue;
+      const arr = DB.items[ch.mod];
+      const ix = arr.findIndex((x) => x.id === ch.id);
+      if (ch.deleted) { if (ix >= 0) { arr.splice(ix, 1); changed = true; } }
+      else if (ch.doc) {
+        const doc = normItem(ch.mod, ch.doc);
+        if (ix < 0) { arr.push(doc); changed = true; }
+        else if (JSON.stringify(arr[ix]) !== JSON.stringify(doc)) { arr[ix] = doc; changed = true; }
+      }
+    }
+    for (const ch of d.attachments || []) {
+      const ix = DB.attachments.findIndex((x) => x.id === ch.id);
+      if (ch.deleted) { if (ix >= 0) { DB.attachments.splice(ix, 1); changed = true; } }
+      else if (ch.doc) {
+        if (ix < 0) { DB.attachments.push(ch.doc); changed = true; }
+        else if (JSON.stringify(DB.attachments[ix]) !== JSON.stringify(ch.doc)) { DB.attachments[ix] = ch.doc; changed = true; }
+      }
+    }
+    Store.serverTime = d.serverTime;
+    const wasStale = Store.stale;
+    Store.stale = false;
+    if (changed && !$('#dlg').open) render(); else if (wasStale) setStatus();
+  } catch (e) {
+    if (e && e.code !== 'unauth') { Store.stale = true; setStatus(); }
+  } finally { Store.polling = false; }
+}
+
+/* ---------- login / first-time setup ---------- */
+function renderAuth() {
+  const setup = Store.auth === 'setup';
+  return `<section class="auth"><form class="auth-card" id="authForm" autocomplete="on">
+    <span class="auth-mark">م</span>
+    <h1>${setup ? 'إعداد النظام لأول مرة' : 'تسجيل الدخول'}</h1>
+    <p>${setup ? 'أنشئ حساب مدير النظام. ستستخدمه بعد ذلك لإضافة باقي المستخدمين من الإعدادات.' : 'ادخل باسم المستخدم وكلمة السر للوصول إلى بيانات الشركات.'}</p>
+    ${setup ? '<label class="fld"><span>الاسم الظاهر</span><input name="displayName" required placeholder="مثال: حسين عادل"></label>' : ''}
+    <label class="fld"><span>اسم المستخدم</span><input name="username" required minlength="3" autocomplete="username" dir="ltr"></label>
+    <label class="fld"><span>كلمة السر</span><input name="password" type="password" required minlength="6" autocomplete="${setup ? 'new-password' : 'current-password'}" dir="ltr"></label>
+    <p class="auth-err" id="authErr" hidden></p>
+    <button class="btn primary" id="authBtn">${setup ? 'إنشاء الحساب والدخول' : 'دخول'}</button>
+    <small class="auth-foot">${ic('save', 'sm')} البيانات محفوظة في قاعدة بيانات SQL Server</small>
+  </form></section>`;
+}
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'authForm') return;
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const setup = Store.auth === 'setup';
+  const btn = $('#authBtn'), err = $('#authErr');
+  btn.disabled = true; err.hidden = true;
+  try {
+    const body = { username: (fd.get('username') || '').toString().trim(), password: (fd.get('password') || '').toString(), displayName: (fd.get('displayName') || '').toString().trim() };
+    const r = await api('POST', setup ? '/api/auth/setup' : '/api/auth/login', body);
+    Store.server.user = r.user;
+    await serverLoad();
+  } catch (x) {
+    err.textContent = x && x.code === 'offline' ? 'تعذّر الاتصال بالسيرفر' : (x && x.message === 'wrong') || (x && x.code === 'server' && !x.message) ? 'اسم المستخدم أو كلمة السر غير صحيحة' : (x && x.message) || 'اسم المستخدم أو كلمة السر غير صحيحة';
+    err.hidden = false; btn.disabled = false;
+  }
+});
+
+/* ---------- account & users (settings) ---------- */
+function renderServerSettings() {
+  const u = Store.server && Store.server.user;
+  if (!u) return '';
+  return `<div class="set-section"><h3>${ic('person')}الحساب</h3>
+      <p class="note">مسجّل الدخول باسم <b>${esc(u.displayName)}</b> (<span dir="ltr">${esc(u.username)}</span>) — ${u.role === 'admin' ? 'مدير النظام' : u.role === 'director' ? 'المدير (قرارات)' : 'مستخدم'}</p>
+      <div class="btns"><button class="btn" data-act="chgPwd">${ic('edit')}تغيير كلمة السر</button><button class="btn danger" data-act="logout">${ic('arrowR')}تسجيل الخروج</button></div>
+    </div>
+    ${u.role === 'admin' ? `<div class="set-section"><h3>${ic('users')}المستخدمون</h3>
+      <div id="usersBox"><p class="note">جارٍ التحميل…</p></div>
+      <div class="btns"><button class="btn primary" data-act="addUser">${ic('plus')}إضافة مستخدم</button></div></div>${renderWaSettings()}` : ''}`;
+}
+async function loadUsers() {
+  const box = $('#usersBox');
+  if (!box) return;
+  try {
+    const list = await api('GET', '/api/users');
+    const me = Store.server.user;
+    box.innerHTML = `<div class="table-wrap"><table><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الصلاحية</th><th></th></tr></thead><tbody>
+      ${list.map((u) => `<tr><td>${esc(u.displayName)}</td><td dir="ltr" style="text-align:right">${esc(u.username)}</td><td>${u.role === 'admin' ? 'مدير النظام' : u.role === 'director' ? 'المدير (قرارات)' : 'مستخدم'}</td>
+        <td class="actions"><div class="row-actions"><button class="icon-btn" title="تعيين كلمة سر جديدة" data-act="resetPwd" data-id="${u.id}" data-name="${esc(u.displayName)}">${ic('edit')}</button>
+        ${u.id === me.id ? '' : `<button class="icon-btn del" title="حذف المستخدم" data-act="delUser" data-id="${u.id}" data-name="${esc(u.displayName)}">${ic('trash')}</button>`}</div></td></tr>`).join('')}
+      </tbody></table></div>`;
+  } catch { box.innerHTML = '<p class="note">تعذّر تحميل المستخدمين</p>'; }
+}
+function openUserForm(kind, id, name) {
+  const titles = { add: 'إضافة مستخدم', reset: `كلمة سر جديدة — ${name}`, mine: 'تغيير كلمة السر' };
+  dlgOnSave = null;
+  $('#dlgForm').innerHTML = `<div class="dlg-head"><span class="chipic">${ic(kind === 'add' ? 'users' : 'edit')}</span><div style="flex:1"><h3>${esc(titles[kind])}</h3></div>
+      <button value="cancel" class="dlg-x" formnovalidate title="إغلاق" aria-label="إغلاق">${ic('x')}</button></div>
+    <div class="dlg-body"><div class="grid">
+      ${kind === 'add' ? `<div class="fld"><label>الاسم الظاهر <span class="req">*</span></label><input name="displayName" required></div>
+        <div class="fld"><label>اسم المستخدم <span class="req">*</span></label><input name="username" required minlength="3" dir="ltr" autocomplete="off"></div>
+        <div class="fld"><label>الصلاحية</label><select name="role"><option value="user">مستخدم (سكرتارية)</option><option value="director">المدير (يفتح على صفحة القرارات)</option><option value="admin">مدير النظام (كل الصلاحيات)</option></select></div>` : ''}
+      ${kind === 'mine' ? '<div class="fld"><label>كلمة السر الحالية <span class="req">*</span></label><input type="password" name="current" required dir="ltr" autocomplete="current-password"></div>' : ''}
+      <div class="fld"><label>${kind === 'add' ? 'كلمة السر' : 'كلمة السر الجديدة'} <span class="req">*</span></label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password"></div>
+    </div><p class="note" style="margin-top:10px">كلمة السر 6 حروف على الأقل.</p></div>
+    <div class="dlg-actions"><button value="save" class="btn primary">${ic('check')}حفظ</button><button value="cancel" class="btn" formnovalidate>إلغاء</button></div>`;
+  dlgOnSave = (fd) => {
+    const g = (k) => (fd.get(k) || '').toString();
+    const run = kind === 'add' ? () => api('POST', '/api/users', { displayName: g('displayName').trim(), username: g('username').trim(), password: g('password'), role: g('role') })
+      : kind === 'reset' ? () => api('POST', `/api/users/${id}/password`, { next: g('password') })
+        : () => api('POST', '/api/me/password', { current: g('current'), next: g('password') });
+    safe(async () => { await run(); if (kind !== 'mine') loadUsers(); }, kind === 'add' ? 'تمت إضافة المستخدم ✔️' : 'تم تغيير كلمة السر ✔️');
+  };
+  $('#dlg').showModal();
+}
+document.addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const { act, id, name } = el.dataset;
+  if (act === 'logout') {
+    try { await api('POST', '/api/auth/logout'); } catch { /* ignore */ }
+    clearInterval(Store.poll); Store.poll = null;
+    Store.server.user = null; Store.auth = 'login';
+    DB = { companies: structuredClone(DEFAULT_COMPANIES), items: emptyItems(), attachments: [] };
+    state.view = 'lobby'; render();
+  } else if (act === 'chgPwd') openUserForm('mine');
+  else if (act === 'addUser') openUserForm('add');
+  else if (act === 'resetPwd') openUserForm('reset', id, name);
+  else if (act === 'delUser') {
+    if (await ask(`هل تريد حذف المستخدم "${name}"؟`, { okText: 'حذف', danger: true })) {
+      await safe(async () => { await api('DELETE', `/api/users/${id}`); loadUsers(); }, 'تم حذف المستخدم');
+    }
+  }
+});
+
+
+/* =========================================================
+   1) التنبيهات قبل المواعيد والجلسات
+   ========================================================= */
+const REM_KEY = 'execsys_rem_v1';
+const remPrefs = () => ({ lead: +(lsGet('execsys_rem_lead') || 30), sound: lsGet('execsys_rem_sound') !== 'off' });
+let remShown = {};
+try { remShown = JSON.parse(lsGet(REM_KEY) || '{}') || {}; } catch { remShown = {}; }
+function remEvents() {
+  const out = [];
+  for (const mod of ['meetings', 'cases', 'tasks', 'calls', 'travel']) {
+    const m = MODULES[mod];
+    for (const i of DB.items[mod] || []) {
+      if (isDone(mod, i)) continue;
+      const d = i[m.dateField];
+      const t = m.timeField && i[m.timeField];
+      if (d && t) out.push({ mod, i, d, t });
+    }
+  }
+  return out;
+}
+function checkReminders() {
+  if (!Store.ready || (Store.mode === 'server' && Store.auth !== 'ok')) return;
+  const now = Date.now();
+  const { lead } = remPrefs();
+  for (const e of remEvents()) {
+    const [y, mo, da] = e.d.split('-').map(Number);
+    const [h, mi] = e.t.split(':').map(Number);
+    const diff = (new Date(y, mo - 1, da, h, mi).getTime() - now) / 60000;
+    const base = `${e.mod}:${e.i.id}:${e.d}T${e.t}`;
+    if (diff <= lead && diff > 1.5 && !remShown[base + ':lead']) { remShown[base + ':lead'] = now; showReminder(e, `بعد ${Math.round(diff)} دقيقة`); }
+    else if (diff <= 1.5 && diff > -10 && !remShown[base + ':now']) { remShown[base + ':now'] = now; showReminder(e, 'الآن'); }
+  }
+  const cut = now - 3 * 86400000;
+  for (const k in remShown) if (remShown[k] < cut) delete remShown[k];
+  lsSet(REM_KEY, JSON.stringify(remShown));
+}
+let _audioCtx;
+function beep() {
+  if (!remPrefs().sound) return;
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    [[880, 0], [660, 0.22]].forEach(([f, t]) => {
+      const o = _audioCtx.createOscillator(), g = _audioCtx.createGain();
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(0.0001, _audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.25, _audioCtx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, _audioCtx.currentTime + t + 0.2);
+      o.connect(g).connect(_audioCtx.destination); o.start(_audioCtx.currentTime + t); o.stop(_audioCtx.currentTime + t + 0.22);
+    });
+  } catch { /* sound is optional */ }
+}
+function showReminder(e, when) {
+  let box = $('#reminders');
+  if (!box) { box = document.createElement('div'); box.id = 'reminders'; document.body.appendChild(box); }
+  const m = MODULES[e.mod], co = company(e.i.company);
+  const id = 'rm_' + uid();
+  const card = document.createElement('div');
+  card.className = 'rem-card' + (when === 'الآن' ? ' now' : '');
+  card.id = id;
+  card.style.setProperty('--c', co.color);
+  card.innerHTML = `<span class="rem-ic">${ic(MOD_SVG[e.mod])}</span>
+    <div class="rem-body"><small>${esc(m.one)} · ${esc(when)} · ${esc(fmtTime(e.t))}</small><b>${esc(titleOf(e.mod, e.i))}</b><span>${esc(co.name)}${e.i.with ? ' · مع ' + esc(e.i.with) : ''}${e.i.court ? ' · ' + esc(e.i.court) : ''}</span>
+      <div class="rem-btns"><button type="button" data-rem="open">فتح</button><button type="button" data-rem="snooze">تأجيل 10 د</button></div></div>
+    <button type="button" class="rem-x" data-rem="close" aria-label="إغلاق">${ic('x', 'sm')}</button>`;
+  card._ev = e;
+  box.appendChild(card);
+  beep();
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') new Notification(`${m.one} ${when}: ${titleOf(e.mod, e.i)}`, { body: `${fmtTime(e.t)} · ${co.name}`, tag: id });
+  } catch { /* ignore */ }
+}
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-rem]');
+  if (!b) return;
+  const card = b.closest('.rem-card');
+  const e = card && card._ev;
+  if (b.dataset.rem === 'open' && e) { if (!$('#dlg').open) openDetails(e.mod, e.i.id); }
+  if (b.dataset.rem === 'snooze' && e) setTimeout(() => showReminder(e, 'تذكير مؤجل'), 10 * 60000);
+  if (card) card.remove();
+});
+setInterval(checkReminders, 30000);
+
+/* =========================================================
+   2) ملف القضية: سجل الجلسات + المرفقات المرتبطة بأي عنصر
+   ========================================================= */
+function linkedAttachments(mod, i) {
+  const cn = mod === 'cases' && i.caseNo ? normAr(i.caseNo) : '';
+  return (DB.attachments || []).filter((a) => (a.link && a.link.mod === mod && a.link.id === i.id) || (cn && a.refNo && normAr(a.refNo) === cn));
+}
+function detExtras(mod, i) {
+  let html = '';
+  if (mod === 'cases') {
+    const hs = (i.hearings || []).slice().sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
+    html += `<section class="det-sec"><h4>${ic('scale', 'sm')}سجل الجلسات <span class="pill">${hs.length}</span></h4>
+      ${hs.length ? `<ol class="hear-log">${hs.map((h) => `<li>
+        <div class="hl-when"><b>${esc(fmtDate(h.date))}</b>${h.time ? `<span>${esc(fmtTime(h.time))}</span>` : ''}</div>
+        <div class="hl-body"><p>${esc(h.decision || '—')}</p>${h.next ? `<small>الجلسة التالية: ${esc(fmtDate(h.next))}${h.nextTime ? ' · ' + esc(fmtTime(h.nextTime)) : ''}</small>` : ''}${h.by ? `<small>سجّلها: ${esc(h.by)}</small>` : ''}</div></li>`).join('')}</ol>`
+      : '<p class="note">لم تُسجَّل جلسات بعد. بعد كل جلسة اضغط «تسجيل جلسة» واكتب ما تم والقرار والجلسة القادمة.</p>'}</section>`;
+  }
+  if (mod === 'contracts' && i.endDate) {
+    const rt = DB.items.tasks.filter((t) => t.renewalOf === i.id).sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''))[0];
+    html += `<section class="det-sec"><h4>${ic('bell', 'sm')}تذكير التجديد</h4>
+      ${rt ? `<button type="button" class="det-link" data-act="openDetailsOf" data-mod="tasks" data-id="${esc(rt.id)}">${ic('bell', 'sm')}<span><b>${esc(rt.title)}</b><small>${esc(fmtDate(rt.dueDate))} · ${esc(rt.status)}</small></span></button>`
+        : '<p class="note">هيتعمل تذكير تلقائي في المهام قبل انتهاء العقد.</p>'}
+      <p class="note">التذكير قبل الانتهاء بـ ${renewDays(i)} يوماً (من «تعديل» تقدر تغيّر المدة).</p></section>`;
+  }
+  if (mod === 'tasks' && i.renewalOf) {
+    const c = DB.items.contracts.find((x) => x.id === i.renewalOf);
+    if (c) html += `<section class="det-sec"><h4>${ic('file', 'sm')}العقد</h4><button type="button" class="det-link" data-act="openDetailsOf" data-mod="contracts" data-id="${esc(c.id)}">${ic('file', 'sm')}<span><b>${esc(c.title)}</b><small>ينتهي ${esc(fmtDate(c.endDate))}${c.party ? ' · ' + esc(c.party) : ''}</small></span></button></section>`;
+  }
+  if (isRepeating(i)) html += `<p class="note">🔁 ${esc(MODULES[mod].one)} متكرر (${esc(i.repeat)}): لما تعلّمه إنه خلص، النسخة الجاية بتتعمل لوحدها.</p>`;
+  const atts = linkedAttachments(mod, i);
+  html += `<section class="det-sec"><h4>${ic('clip', 'sm')}المرفقات المرتبطة <span class="pill">${atts.length}</span></h4>
+    ${atts.length ? `<div class="det-atts">${atts.map((a) => `<button type="button" class="det-att k-${attKind(a)}" data-att="preview" data-id="${esc(a.id)}"><span class="t-ic k-${attKind(a)}">${ic(attIcon(attKind(a)))}<i>${esc(extOf(a.fileName))}</i></span><span><b>${esc(a.title)}</b><small>${esc(a.category || '')}${a.docDate ? ' · ' + esc(fmtDate(a.docDate)) : ''}</small></span></button>`).join('')}</div>`
+      : `<p class="note">لا توجد مرفقات مرتبطة${mod === 'cases' ? ' (المرفقات اللي رقمها المرجعي = رقم القضية بتظهر هنا تلقائياً)' : ''}.</p>`}</section>`;
+  return html;
+}
+function openHearingForm(id) {
+  const i = DB.items.cases.find((x) => x.id === id);
+  if (!i) return;
+  const st = MODULES.cases.fields.find((f) => f.k === 'status').opts;
+  dlgOnSave = null;
+  $('#dlgForm').innerHTML = `<div class="dlg-head"><span class="chipic">${ic('scale')}</span><div style="flex:1;min-width:0"><h3>تسجيل جلسة</h3><div class="small clip1">${esc(i.caseNo ? 'قضية رقم ' + i.caseNo + ' — ' : '')}${esc(i.title)}</div></div>
+      <button value="cancel" class="dlg-x" formnovalidate title="إغلاق" aria-label="إغلاق">${ic('x')}</button></div>
+    <div class="dlg-body"><div class="grid">
+      <div class="fld"><label>تاريخ الجلسة <span class="req">*</span></label><input type="date" name="date" required value="${esc(i.nextHearing || todayStr())}"></div>
+      <div class="fld"><label>الساعة</label><input type="time" name="time" value="${esc(i.hearingTime || '')}"></div>
+      <div class="fld full"><label>ما تم في الجلسة / القرار <span class="req">*</span></label><textarea name="decision" required placeholder="مثال: تأجيل للاطلاع وتقديم المستندات"></textarea></div>
+      <div class="fld"><label>الجلسة القادمة</label><input type="date" name="next"></div>
+      <div class="fld"><label>ساعة الجلسة القادمة</label><input type="time" name="nextTime" value="${esc(i.hearingTime || '')}"></div>
+      <div class="fld full"><label>المطلوب للجلسة القادمة</label><textarea name="todo">${esc(i.notes || '')}</textarea></div>
+      <div class="fld"><label>حالة القضية بعد الجلسة</label><select name="status">${st.map((o) => `<option ${o === i.status ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>
+    </div></div>
+    <div class="dlg-actions"><button value="save" class="btn primary">${ic('check')}حفظ الجلسة</button><button value="cancel" class="btn" formnovalidate>إلغاء</button></div>`;
+  dlgOnSave = (fd) => {
+    const g = (k) => (fd.get(k) || '').toString().trim();
+    const entry = { id: uid(), date: g('date'), time: g('time'), decision: g('decision'), next: g('next'), nextTime: g('nextTime'), by: Store.server && Store.server.user ? Store.server.user.displayName : '' };
+    const o = { ...i, hearings: [...(i.hearings || []), entry], status: g('status') || i.status, notes: g('todo'), updated: new Date().toISOString() };
+    if (entry.next) { o.nextHearing = entry.next; o.hearingTime = entry.nextTime; }
+    safe(async () => { await putItem('cases', o); openDetails('cases', o.id); }, 'تم تسجيل الجلسة ✔️');
+  };
+  if (!$('#dlg').open) $('#dlg').showModal();
+}
+
+/* =========================================================
+   3) التقارير والإحصائيات
+   ========================================================= */
+state.rep = { period: 'month', from: '', to: '' };
+function repRange() {
+  const t = todayStr(), d = new Date();
+  const ymdOf = (y, m, day) => ymd(new Date(y, m, day));
+  switch (state.rep.period) {
+    case 'week': return [addDays(t, -6), t, 'آخر 7 أيام'];
+    case 'last': return [ymdOf(d.getFullYear(), d.getMonth() - 1, 1), ymdOf(d.getFullYear(), d.getMonth(), 0), 'الشهر الماضي'];
+    case 'year': return [`${d.getFullYear()}-01-01`, `${d.getFullYear()}-12-31`, `سنة ${d.getFullYear()}`];
+    case 'custom': return [state.rep.from || addDays(t, -30), state.rep.to || t, 'فترة مخصصة'];
+    default: return [ymdOf(d.getFullYear(), d.getMonth(), 1), ymdOf(d.getFullYear(), d.getMonth() + 1, 0), MONTHS[d.getMonth()] + ' ' + d.getFullYear()];
+  }
+}
+function repData(cid) {
+  const [from, to] = repRange();
+  const t = todayStr();
+  const inR = (d) => d && d >= from && d <= to;
+  const items = (mod) => (cid === 'all' ? DB.items[mod] : DB.items[mod].filter((i) => i.company === cid));
+  const meet = items('meetings').filter((i) => inR(i.date));
+  const cases = items('cases');
+  const held = cases.flatMap((c) => (c.hearings || []).filter((h) => inR(h.date)).map((h) => ({ ...h, c })));
+  const hearingsInRange = cases.filter((c) => inR(c.nextHearing)).length + held.length;
+  const contracts = items('contracts');
+  const appr = items('approvals').filter((i) => inR(i.dueDate || i.reqDate));
+  const tasks = items('tasks').filter((i) => inR(i.dueDate));
+  const calls = items('calls').filter((i) => inR(i.date));
+  const atts = (DB.attachments || []).filter((a) => (cid === 'all' || a.company === cid) && inR((a.created || '').slice(0, 10)));
+  return {
+    from, to,
+    meetings: { total: meet.length, done: meet.filter((i) => i.status === 'تم').length, cancelled: meet.filter((i) => i.status === 'ملغى').length, upcoming: meet.filter((i) => i.date >= t && !isDone('meetings', i)).length },
+    hearings: { total: hearingsInRange, held: held.length, open: cases.filter((c) => !isDone('cases', c)).length, decisions: held.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6) },
+    contracts: { active: contracts.filter((c) => c.status === 'ساري').length, expiring: contracts.filter((c) => !isDone('contracts', c) && c.endDate && c.endDate >= t && c.endDate <= addDays(t, 30)).length, expired: contracts.filter((c) => !isDone('contracts', c) && c.endDate && c.endDate < t).length },
+    approvals: { total: appr.length, ok: appr.filter((i) => i.status === 'تمت الموافقة').length, no: appr.filter((i) => i.status === 'مرفوض').length, pending: appr.filter((i) => !isDone('approvals', i)).length, amount: appr.filter((i) => i.status === 'تمت الموافقة').reduce((s, i) => s + (+i.amount || 0), 0) },
+    tasks: { total: tasks.length, done: tasks.filter((i) => isDone('tasks', i)).length, overdue: tasks.filter((i) => !isDone('tasks', i) && i.dueDate < t).length },
+    calls: { total: calls.length, answered: calls.filter((i) => i.status === 'تم الرد').length, pending: calls.filter((i) => i.status === 'بانتظار الرد').length },
+    atts: atts.length,
+    fin: financeTotals(cid, from, to),
+    series: (() => {
+      const days = daysBetween(from, to) + 1;
+      const step = days <= 16 ? 1 : days <= 70 ? 7 : 30;
+      const out = [];
+      for (let s = 0; s < days; s += step) {
+        const a = addDays(from, s), b = addDays(from, Math.min(days - 1, s + step - 1));
+        const n = ['meetings', 'tasks', 'calls'].reduce((acc, mod) => acc + items(mod).filter((i) => { const d = i[MODULES[mod].dateField]; return d && d >= a && d <= b; }).length, 0)
+          + cases.filter((c) => c.nextHearing && c.nextHearing >= a && c.nextHearing <= b).length + held.filter((h) => h.date >= a && h.date <= b).length;
+        out.push({ a, b, n, label: step === 1 ? String(parseD(a).getDate()) : step === 7 ? `${parseD(a).getDate()}/${parseD(a).getMonth() + 1}` : MONTHS[parseD(a).getMonth()].slice(0, 3) });
+      }
+      return out;
+    })(),
+  };
+}
+function repText(r, label) {
+  return [`📊 تقرير ${label} — ${spaceCo().name}`, `من ${fmtDate(r.from)} إلى ${fmtDate(r.to)}`, '',
+    `📅 المواعيد: ${r.meetings.total} (تم ${r.meetings.done}، ملغى ${r.meetings.cancelled}، قادم ${r.meetings.upcoming})`,
+    `⚖️ الجلسات: ${r.hearings.total} (مسجّلة ${r.hearings.held})، قضايا مفتوحة ${r.hearings.open}`,
+    `📝 العقود: سارية ${r.contracts.active}، تنتهي خلال 30 يوماً ${r.contracts.expiring}، منتهية ${r.contracts.expired}`,
+    `✍️ الموافقات: ${r.approvals.total} (تمت ${r.approvals.ok}، مرفوض ${r.approvals.no}، معلّقة ${r.approvals.pending})${r.approvals.amount ? ' — إجمالي الموافق عليه ' + money(r.approvals.amount) : ''}`,
+    `🔔 المهام: ${r.tasks.total} (منجزة ${r.tasks.done}، متأخرة ${r.tasks.overdue})`,
+    `📞 المكالمات: ${r.calls.total} (تم الرد ${r.calls.answered}، بانتظار الرد ${r.calls.pending})`,
+    `📎 مرفقات جديدة: ${r.atts}`].join('\n');
+}
+function renderReports() {
+  const [, , label] = repRange();
+  const r = repData(state.company);
+  const max = Math.max(1, ...r.series.map((s) => s.n));
+  const kpi = (icon, title, big, rows, cls = '') => `<div class="rep-kpi ${cls}"><div class="rk-h">${ic(icon)}<span>${title}</span></div><b>${big}</b><ul>${rows.map(([l, v, c]) => `<li class="${c || ''}"><span>${l}</span><b>${v}</b></li>`).join('')}</ul></div>`;
+  const per = state.company === 'all' ? `<section class="rep-card"><h3>${ic('building')}حسب الشركة</h3><div class="table-wrap"><table><thead><tr><th>الشركة</th><th>المواعيد</th><th>الجلسات</th><th>عقود سارية</th><th>موافقات معلّقة</th><th>مهام متأخرة</th><th>مرفقات جديدة</th></tr></thead><tbody>
+      ${DB.companies.map((c) => { const x = repData(c.id); return `<tr><td>${coTag(c.id)}</td><td>${x.meetings.total}</td><td>${x.hearings.total}</td><td>${x.contracts.active}</td><td>${x.approvals.pending}</td><td>${x.tasks.overdue}</td><td>${x.atts}</td></tr>`; }).join('')}
+    </tbody></table></div></section>` : '';
+  return `<div class="sec-head"><div><h2>التقارير</h2><p>${esc(label)} · من ${esc(fmtDate(r.from))} إلى ${esc(fmtDate(r.to))}</p></div>
+      <div class="sec-tools no-print">
+        <div class="tabs">${[['week', 'آخر 7 أيام'], ['month', 'هذا الشهر'], ['last', 'الشهر الماضي'], ['year', 'هذه السنة'], ['custom', 'مخصص']].map(([k, l]) => `<button class="tab ${state.rep.period === k ? 'active' : ''}" data-rep="${k}">${l}</button>`).join('')}</div>
+      </div></div>
+    ${state.rep.period === 'custom' ? `<div class="rep-custom no-print"><label>من <input type="date" data-repd="from" value="${esc(r.from)}"></label><label>إلى <input type="date" data-repd="to" value="${esc(r.to)}"></label></div>` : ''}
+    <div class="rep-actions no-print"><button class="btn" data-act="repPrint">${ic('file')}طباعة / PDF</button><button class="btn" data-act="repCsv">${ic('download')}Excel</button><a class="btn" href="${waLink(repText(r, label))}" target="_blank" rel="noopener">${ic('wa')}إرسال للمدير</a></div>
+    <div class="rep-kpis">
+      ${kpi('calendar', 'المواعيد', r.meetings.total, [['تم', r.meetings.done, 'ok'], ['ملغى', r.meetings.cancelled], ['قادم', r.meetings.upcoming]])}
+      ${kpi('scale', 'الجلسات', r.hearings.total, [['مسجّلة بقراراتها', r.hearings.held, 'ok'], ['قضايا مفتوحة', r.hearings.open]])}
+      ${kpi('file', 'العقود', r.contracts.active, [['سارية', r.contracts.active, 'ok'], ['تنتهي خلال 30 يوماً', r.contracts.expiring, r.contracts.expiring ? 'warn' : ''], ['منتهية', r.contracts.expired, r.contracts.expired ? 'bad' : '']])}
+      ${kpi('approve', 'الموافقات', r.approvals.total, [['تمت', r.approvals.ok, 'ok'], ['مرفوض', r.approvals.no, r.approvals.no ? 'bad' : ''], ['معلّقة', r.approvals.pending, r.approvals.pending ? 'warn' : '']].concat(r.approvals.amount ? [['المبلغ الموافق عليه', money(r.approvals.amount)]] : []))}
+      ${kpi('bell', 'المهام', r.tasks.total, [['منجزة', r.tasks.done, 'ok'], ['متأخرة', r.tasks.overdue, r.tasks.overdue ? 'bad' : '']])}
+      ${kpi('phone', 'المكالمات', r.calls.total, [['تم الرد', r.calls.answered, 'ok'], ['بانتظار الرد', r.calls.pending, r.calls.pending ? 'warn' : '']])}
+      ${kpi('chart', 'المالية (الصافي)', `${r.fin.net < 0 ? '−' : ''}${money(Math.abs(r.fin.net)) || '0'}`, [['الإيرادات', money(r.fin.inc) || '0', 'ok'], ['المصروفات', money(r.fin.exp) || '0', 'bad'], ['مستحق لنا', money(r.fin.recv) || '0'], ['مستحق علينا', money(r.fin.pay) || '0', r.fin.pay ? 'warn' : '']].concat(r.fin.byCat.slice(0, 3).map(([c, v]) => ['• ' + c, money(v)])))}
+      ${kpi('clip', 'مرفقات جديدة', r.atts, [])}
+    </div>
+    <section class="rep-card"><h3>${ic('week')}حجم العمل خلال الفترة</h3>
+      <div class="rep-bars">${r.series.map((s) => `<div class="rb" title="${esc(fmtDate(s.a))}${s.a !== s.b ? ' — ' + esc(fmtDate(s.b)) : ''}: ${s.n}"><span class="rb-n">${s.n || ''}</span><span class="rb-bar"><i style="height:${s.n ? Math.max(6, Math.round((s.n / max) * 100)) : 2}%"></i></span><span class="rb-l">${esc(s.label)}</span></div>`).join('')}</div>
+      <p class="note">المواعيد والجلسات والمهام والمكالمات حسب تاريخها.</p>
+    </section>
+    ${r.hearings.decisions.length ? `<section class="rep-card"><h3>${ic('scale')}آخر قرارات الجلسات</h3><ul class="rep-dec">${r.hearings.decisions.map((h) => `<li><b>${esc(fmtDate(h.date))}</b> — ${esc(h.c.title)}${h.c.caseNo ? ` (${esc(h.c.caseNo)})` : ''}: ${esc(h.decision || '')}</li>`).join('')}</ul></section>` : ''}
+    ${per}
+    <section class="rep-card"><h3>${ic('clock')}سجل النشاط</h3>${Store.mode === 'server' ? '<div id="activityBox"><p class="note">جارٍ التحميل…</p></div>' : '<p class="note">سجل النشاط (مين أضاف أو عدّل إيه وإمتى) متاح في نسخة السيرفر.</p>'}</section>`;
+}
+const ACT_VERB = { add: 'أضاف', edit: 'عدّل', delete: 'حذف', import: 'استعاد' };
+const ACT_MOD = { attachments: 'مرفق', all: 'البيانات' };
+function timeAgo(iso) {
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return 'الآن';
+  if (m < 60) return `منذ ${m} دقيقة`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `منذ ${h} ساعة`;
+  return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' });
+}
+async function loadActivity() {
+  const box = $('#activityBox');
+  if (!box || box.dataset.loading) return;
+  box.dataset.loading = '1';
+  try {
+    const list = await api('GET', '/api/activity?limit=60&company=' + encodeURIComponent(state.company));
+    box.innerHTML = list.length ? `<ul class="act-list">${list.map((a) => `<li class="act-${esc(a.action)}"><span class="act-dot"></span><div><b>${esc(a.name || a.user || '—')}</b> ${ACT_VERB[a.action] || a.action} ${esc(MODULES[a.module] ? MODULES[a.module].one : ACT_MOD[a.module] || a.module)} ${a.title ? `«${esc(a.title)}»` : ''}${state.company === 'all' && a.company ? ` · ${esc(company(a.company).name)}` : ''}<small>${esc(timeAgo(a.at))}</small></div></li>`).join('')}</ul>`
+      : '<p class="note">لا يوجد نشاط مسجّل بعد.</p>';
+  } catch { box.innerHTML = '<p class="note">تعذّر تحميل سجل النشاط</p>'; }
+}
+function repCsv() {
+  const [, , label] = repRange();
+  const rows = [['البند', 'القيمة']];
+  repText(repData(state.company), label).split('\n').filter(Boolean).forEach((l) => { const [a, ...b] = l.split(':'); rows.push([a.trim(), b.join(':').trim()]); });
+  if (state.company === 'all') {
+    rows.push([], ['الشركة', 'المواعيد', 'الجلسات', 'عقود سارية', 'موافقات معلّقة', 'مهام متأخرة', 'مرفقات جديدة']);
+    for (const c of DB.companies) { const x = repData(c.id); rows.push([c.name, x.meetings.total, x.hearings.total, x.contracts.active, x.approvals.pending, x.tasks.overdue, x.atts]); }
+  }
+  const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  download(`تقرير-${label}-${todayStr()}.csv`, '﻿' + rows.map((r) => r.map(q).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+
+/* =========================================================
+   4) الإعدادات: التنبيهات والنسخ الاحتياطي التلقائي
+   ========================================================= */
+function renderReminderSettings() {
+  const p = remPrefs();
+  const canNotify = 'Notification' in window && window.isSecureContext;
+  return `<div class="set-section"><h3>${ic('bell')}التنبيهات</h3>
+    <p class="note">يظهر تنبيه في الصفحة (مع صوت) قبل المواعيد والجلسات والمهام اللي ليها ساعة، وتنبيه تاني وقت الموعد نفسه. لازم الصفحة تكون مفتوحة.</p>
+    <div class="co-row"><label class="adv-f" style="min-width:220px"><span>التنبيه قبل الموعد بـ</span><select data-remlead>${[10, 15, 30, 60, 120].map((n) => `<option value="${n}" ${p.lead === n ? 'selected' : ''}>${n < 60 ? n + ' دقيقة' : n / 60 + (n === 60 ? ' ساعة' : ' ساعتين')}</option>`).join('')}</select></label>
+      <label class="adv-f" style="min-width:160px"><span>الصوت</span><select data-remsound><option value="on" ${p.sound ? 'selected' : ''}>مفعّل</option><option value="off" ${p.sound ? '' : 'selected'}>بدون صوت</option></select></label></div>
+    <div class="btns">${canNotify ? `<button class="btn" data-act="remNotify">${ic('bell')}${Notification.permission === 'granted' ? 'إشعارات الجهاز مفعّلة ✔️' : 'تفعيل إشعارات الجهاز (تظهر حتى لو الصفحة في الخلفية)'}</button>` : '<span class="note">إشعارات الجهاز (خارج الصفحة) بتشتغل لما تفتح السيستم من نفس جهاز السيرفر على http://localhost:5080.</span>'}
+      <button class="btn" data-act="remTest">${ic('clock')}تجربة التنبيه</button></div>
+  </div>`;
+}
+function renderBackupSettings() {
+  if (Store.mode !== 'server' || !Store.server || !Store.server.user || Store.server.user.role !== 'admin') return '';
+  return `<div class="set-section"><h3>${ic('save')}النسخ الاحتياطي التلقائي (السيرفر)</h3>
+    <div id="backupBox"><p class="note">جارٍ التحميل…</p></div>
+    <div class="btns"><button class="btn primary" data-act="backupNow">${ic('save')}عمل نسخة احتياطية الآن</button></div></div>`;
+}
+async function loadBackupStatus() {
+  const box = $('#backupBox');
+  if (!box || box.dataset.loading) return;
+  box.dataset.loading = '1';
+  try {
+    const s = await api('GET', '/api/backup/status');
+    const l = s.last;
+    box.innerHTML = `<p class="note">السيرفر بيعمل نسخة احتياطية تلقائية <b>كل يوم</b>: ملف بيانات (JSON) في <span dir="ltr">${esc(s.folder)}</span>، ونسخة كاملة من القاعدة (.bak) فيها الملفات في فولدر النسخ الخاص بـ SQL Server. بيحتفظ بآخر 30 يوم.</p>
+      ${l ? `<p class="note">آخر نسخة: <b>${esc(new Date(l.at).toLocaleString('ar-EG', { dateStyle: 'full', timeStyle: 'short' }))}</b>${l.bak ? `<br>نسخة القاعدة: <span dir="ltr">${esc(l.bak)}</span>` : l.bakError ? `<br>⚠️ نسخة القاعدة (.bak) لم تنجح: ${esc(l.bakError)}` : ''}</p>` : '<p class="note">لم تُعمل نسخة بعد — أول نسخة بتتعمل تلقائياً بعد تشغيل السيرفر بدقيقة.</p>'}`;
+  } catch { box.innerHTML = '<p class="note">تعذّر قراءة حالة النسخ الاحتياطي</p>'; }
+}
+document.addEventListener('change', (e) => {
+  if (e.target.matches('[data-remlead]')) { lsSet('execsys_rem_lead', e.target.value); toast('تم الحفظ ✔️'); }
+  if (e.target.matches('[data-remsound]')) { lsSet('execsys_rem_sound', e.target.value); toast('تم الحفظ ✔️'); }
+  if (e.target.matches('[data-repd]')) { state.rep[e.target.dataset.repd] = e.target.value; render(); }
+});
+document.addEventListener('click', async (e) => {
+  const rp = e.target.closest('[data-rep]');
+  if (rp) { state.rep.period = rp.dataset.rep; render(); return; }
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const { act, mod, id } = el.dataset;
+  if (act === 'addHearing') openHearingForm(id);
+  else if (act === 'attachTo') {
+    const it = DB.items[mod].find((x) => x.id === id);
+    if (!it) return;
+    if ($('#dlg').open) $('#dlg').close();
+    pickFiles({ link: { mod, id }, company: it.company, refNo: mod === 'cases' ? it.caseNo || '' : '', party: it.client || it.party || it.with || '', category: mod === 'cases' ? 'أحكام وقضايا' : mod === 'contracts' ? 'عقود' : '' });
+  } else if (act === 'repPrint') window.print();
+  else if (act === 'repCsv') repCsv();
+  else if (act === 'remNotify') {
+    try { const r = await Notification.requestPermission(); toast(r === 'granted' ? 'تم تفعيل إشعارات الجهاز ✔️' : 'لم يتم السماح بالإشعارات'); render(); } catch { toast('المتصفح لا يدعم الإشعارات'); }
+  } else if (act === 'remTest') {
+    showReminder({ mod: 'meetings', i: { id: 'test', title: 'هذا تنبيه تجريبي', company: DB.companies[0] && DB.companies[0].id }, d: todayStr(), t: nowHM() }, 'تجربة');
+  } else if (act === 'backupNow') {
+    el.disabled = true;
+    await safe(async () => { await api('POST', '/api/backup/now'); const b = $('#backupBox'); if (b) delete b.dataset.loading; loadBackupStatus(); }, 'تمت النسخة الاحتياطية ✔️');
+    el.disabled = false;
+  }
+});
+
+
+/* =========================================================
+   التكرار التلقائي + تذكير تجديد العقود
+   ========================================================= */
+const REPEAT_OPTS = ['لا يتكرر', 'يومياً', 'أسبوعياً', 'كل أسبوعين', 'شهرياً', 'كل 3 شهور', 'سنوياً'];
+const isRepeating = (i) => i && i.repeat && i.repeat !== 'لا يتكرر';
+function addMonths(s, n) {
+  const d = parseD(s), day = d.getDate();
+  d.setDate(1); d.setMonth(d.getMonth() + n);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, last));
+  return ymd(d);
+}
+function stepDate(s, rep) {
+  switch (rep) {
+    case 'يومياً': return addDays(s, 1);
+    case 'أسبوعياً': return addDays(s, 7);
+    case 'كل أسبوعين': return addDays(s, 14);
+    case 'شهرياً': return addMonths(s, 1);
+    case 'كل 3 شهور': return addMonths(s, 3);
+    case 'سنوياً': return addMonths(s, 12);
+    default: return null;
+  }
+}
+// لما عنصر متكرر يتعلّم إنه خلص، بنعمل النسخة الجاية منه
+function nextOccurrence(mod, obj) {
+  const m = MODULES[mod];
+  const from = obj[m.dateField] || todayStr();
+  let next = stepDate(from, obj.repeat);
+  if (!next) return null;
+  const t = todayStr();
+  for (let guard = 0; next < t && guard < 400; guard++) next = stepDate(next, obj.repeat);
+  const statusF = m.fields.find((f) => f.k === 'status');
+  const copy = { ...obj, id: uid(), [m.dateField]: next, status: statusF ? statusF.opts[0] : '', created: new Date().toISOString(), updated: new Date().toISOString(), repeatOf: obj.repeatOf || obj.id };
+  delete copy.nextCreated;
+  return copy;
+}
+const renewDays = (c) => parseInt(c.remindDays, 10) || 30;
+const renewalTaskId = (c) => cleanId(`renew_${c.id}_${(c.endDate || '').replace(/-/g, '')}`);
+async function syncRenewalTask(c) {
+  if (!c || !c.endDate) return;
+  const open = DB.items.tasks.filter((t) => t.renewalOf === c.id && !isDone('tasks', t));
+  if (isDone('contracts', c)) { // العقد انتهى أو اتلغى: نقفل مهام التجديد المفتوحة
+    for (const t of open) await putItemRaw('tasks', { ...t, status: 'ملغاة', updated: new Date().toISOString() });
+    return;
+  }
+  const id = renewalTaskId(c);
+  for (const t of open) if (t.id !== id) await removeItem('tasks', t.id); // تاريخ الانتهاء اتغير
+  const due = addDays(c.endDate, -renewDays(c));
+  const existing = DB.items.tasks.find((t) => t.id === id);
+  const noRenew = c.renewal === 'بدون تجديد';
+  const title = `${noRenew ? 'انتهاء عقد' : 'تجديد عقد'}: ${c.title}${c.party ? ' مع ' + c.party : ''}`;
+  const notes = `العقد ينتهي في ${fmtDate(c.endDate)}${c.value ? ' — القيمة ' + money(c.value) : ''}.${noRenew ? '' : ' راجع شروط التجديد مع الطرف الآخر واعرضه على المدير.'}`;
+  const want = { company: c.company, title, dueDate: due < todayStr() ? todayStr() : due, notes, priority: 'important', renewalOf: c.id };
+  if (existing) {
+    if (isDone('tasks', existing)) return; // اتعملت خلاص في الدورة دي
+    if (existing.title !== want.title || existing.notes !== want.notes || existing.company !== want.company) await putItemRaw('tasks', { ...existing, ...want, dueDate: existing.dueDate, updated: new Date().toISOString() });
+    return;
+  }
+  await putItemRaw('tasks', { id, ...want, status: 'مفتوحة', repeat: 'لا يتكرر', time: '', assignee: '', created: new Date().toISOString(), updated: new Date().toISOString() });
+}
+async function syncAllRenewals() {
+  if (Store.mode === 'server' && Store.auth !== 'ok') return;
+  for (const c of [...DB.items.contracts]) {
+    try { await syncRenewalTask(c); } catch (e) { console.warn('renewal sync', e); }
+  }
+}
+// الحفظ بيمر من هنا: التكرار قبل الحفظ، ومهام التجديد بعده
+async function putItem(mod, obj) {
+  obj = { ...obj, id: cleanId(obj.id) };
+  const prev = DB.items[mod].find((x) => x.id === obj.id);
+  let next = null;
+  if (MODULES[mod].repeatable && isRepeating(obj) && isDone(mod, obj) && !obj.nextCreated && !(prev && isDone(mod, prev))) {
+    next = nextOccurrence(mod, obj);
+    if (next) obj.nextCreated = next.id;
+  }
+  await putItemRaw(mod, obj);
+  if (next) { await putItemRaw(mod, next); toast(`🔁 اتعمل الموعد الجاي: ${fmtDate(next[MODULES[mod].dateField])}`); }
+  if (mod === 'contracts') { try { await syncRenewalTask(obj); } catch (e) { console.warn(e); } }
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act="openDetailsOf"]');
+  if (el) openDetails(el.dataset.mod, el.dataset.id);
+});
+
+
+/* =========================================================
+   المالية: إجماليات المصروفات والإيرادات
+   ========================================================= */
+function financeTotals(cid, from, to) {
+  const list = (DB.items.finance || []).filter((i) => (cid === 'all' || i.company === cid) && (!from || (i.date && i.date >= from)) && (!to || (i.date && i.date <= to)));
+  const sum = (fn) => list.filter(fn).reduce((s, i) => s + (+i.amount || 0), 0);
+  const inc = sum((i) => i.type === 'إيراد' && i.status !== 'مستحق');
+  const exp = sum((i) => i.type !== 'إيراد' && i.status !== 'مستحق');
+  const recv = sum((i) => i.type === 'إيراد' && i.status === 'مستحق');
+  const pay = sum((i) => i.type !== 'إيراد' && i.status === 'مستحق');
+  const byCat = {};
+  for (const i of list) if (i.type !== 'إيراد' && i.status !== 'مستحق') byCat[i.category || 'أخرى'] = (byCat[i.category || 'أخرى'] || 0) + (+i.amount || 0);
+  return { inc, exp, net: inc - exp, recv, pay, count: list.length, byCat: Object.entries(byCat).sort((a, b) => b[1] - a[1]) };
+}
+function monthRange() { const d = new Date(); return [ymd(new Date(d.getFullYear(), d.getMonth(), 1)), ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0))]; }
+function financeStrip(cid) {
+  const [a, b] = monthRange();
+  const f = financeTotals(cid, a, b);
+  const all = financeTotals(cid);
+  return `<div class="fin-strip">
+    <div class="fs inc"><span>إيرادات هذا الشهر</span><b>${esc(money(f.inc) || '0 ج.م')}</b></div>
+    <div class="fs exp"><span>مصروفات هذا الشهر</span><b>${esc(money(f.exp) || '0 ج.م')}</b></div>
+    <div class="fs ${f.net >= 0 ? 'pos' : 'neg'}"><span>الصافي</span><b>${f.net < 0 ? '−' : ''}${esc(money(Math.abs(f.net)) || '0 ج.م')}</b></div>
+    <div class="fs due"><span>مستحق لنا / علينا (الكل)</span><b>${esc(money(all.recv) || '0')} / ${esc(money(all.pay) || '0')}</b></div>
+  </div>`;
+}
+
+/* =========================================================
+   صفحة المدير: اللي محتاج قراره بس
+   ========================================================= */
+function renderDirector() {
+  const t = todayStr();
+  const cid = state.company;
+  const me = Store.server && Store.server.user;
+  const hour = new Date().getHours();
+  const name = me && me.role === 'director' ? me.displayName : '';
+  const scope = (mod) => (DB.items[mod] || []).filter((i) => cid === 'all' || i.company === cid);
+  const approvals = scope('approvals').filter((i) => !isDone('approvals', i)).sort((a, b) => (a.dueDate || '9').localeCompare(b.dueDate || '9'));
+  const ev = [];
+  for (const mod of ['meetings', 'cases', 'travel', 'tasks']) {
+    const m = MODULES[mod];
+    for (const i of scope(mod)) if (!isDone(mod, i) && i[m.dateField]) ev.push({ mod, i, date: i[m.dateField], time: (m.timeField && i[m.timeField]) || '' });
+  }
+  const byD = (a, b) => (a.date + (a.time || '00:00')).localeCompare(b.date + (b.time || '00:00'));
+  const today = ev.filter((e) => e.date === t && e.mod !== 'tasks').sort(byD);
+  const week = ev.filter((e) => e.date > t && e.date <= addDays(t, 7) && e.mod !== 'tasks').sort(byD);
+  const hot = ev.filter((e) => e.i.priority === 'urgent' || e.date < t).sort(byD);
+  const calls = scope('calls').filter((i) => i.status === 'بانتظار الرد' && (!i.forWhom || /مدير|شيخ/.test(i.forWhom)));
+  const renew = scope('contracts').filter((c) => !isDone('contracts', c) && c.endDate && c.endDate <= addDays(t, 45)).sort((a, b) => a.endDate.localeCompare(b.endDate));
+  const [ma, mb] = monthRange();
+  const fin = financeTotals(cid, ma, mb);
+  const totalAmt = approvals.reduce((s, a) => s + (+a.amount || 0), 0);
+  const empty = (icon, msg) => `<div class="dz-empty">${ic(icon)}<span>${msg}</span></div>`;
+  const coDot = (id) => cid === 'all' ? `<span class="dz-co"><i style="background:${esc(company(id).color)}"></i>${esc(company(id).name)}</span>` : '';
+
+  // timeline row
+  const now = nowHM();
+  const tl = (list, showDay) => {
+    let placed = !list.some((e) => e.date === t);
+    let out = '';
+    for (const e of list) {
+      if (!placed && e.date === t && e.time && e.time >= now) { out += `<div class="dz-now"><span>الآن · ${esc(fmtTime(now))}</span></div>`; placed = true; }
+      out += `<button class="dz-ev ${alertLevel(e.mod, e.i)}" data-act="view" data-mod="${e.mod}" data-id="${esc(e.i.id)}" style="--k:${esc(company(e.i.company).color)}">
+        <span class="dz-time">${e.time ? `<b>${esc(fmtTime(e.time).replace(/ [صم]$/, ''))}</b><small>${fmtTime(e.time).slice(-1) === 'ص' ? 'ص' : 'م'}</small>` : '<b class="sm">طوال اليوم</b>'}${showDay ? `<em>${esc(relDay(e.date))}</em>` : ''}</span>
+        <span class="dz-dot">${ic(MOD_SVG[e.mod], 'sm')}</span>
+        <span class="dz-body"><b>${esc(titleOf(e.mod, e.i))}</b><small>${esc(MODULES[e.mod].one)}${e.i.with ? ' · مع ' + esc(e.i.with) : ''}${e.i.court ? ' · ' + esc(e.i.court) : ''}${e.i.location ? ' · ' + esc(e.i.location) : ''}</small>${coDot(e.i.company)}</span>
+      </button>`;
+    }
+    if (!placed) out += `<div class="dz-now"><span>الآن · ${esc(fmtTime(now))}</span></div>`;
+    return `<div class="dz-tl">${out}</div>`;
+  };
+  const mini = (cls, icon, title, sub, act, mod, id, right) => `<button class="dz-mini ${cls}" data-act="${act}" data-mod="${mod}" data-id="${esc(id)}">
+      <span class="dz-mi">${ic(icon, 'sm')}</span><span class="dz-mb"><b>${esc(title)}</b><small>${sub}</small></span>${right ? `<span class="dz-mr">${right}</span>` : ''}</button>`;
+
+  const decisions = approvals.length ? approvals.map((a) => {
+    const lvl = alertLevel('approvals', a);
+    const due = a.dueDate ? `<span class="dz-due ${lvl}">${ic('clock', 'sm')}${a.dueDate < t ? 'متأخر · ' : ''}${esc(relDay(a.dueDate))}</span>` : '';
+    return `<article class="dz-dec ${lvl}" style="--k:${esc(company(a.company).color)}">
+      <header>
+        <span class="dz-av">${esc((a.requestedBy || '؟').trim().charAt(0))}</span>
+        <div class="dz-dh"><b>${esc(a.title)}</b><small>${a.requestedBy ? 'مقدَّم من ' + esc(a.requestedBy) + ' · ' : ''}${esc(company(a.company).name)}</small></div>
+        ${a.amount ? `<div class="dz-amt"><b>${esc(Number(a.amount).toLocaleString('ar-EG'))}</b><small>جنيه</small></div>` : ''}
+      </header>
+      ${a.notes ? `<p class="dz-notes">${esc(a.notes)}</p>` : ''}
+      <div class="dz-meta">${due}${a.reqDate ? `<span>${ic('calendar', 'sm')}قُدِّم ${esc(fmtDate(a.reqDate))}</span>` : ''}</div>
+      <textarea class="dz-comment" id="dc_${esc(a.id)}" rows="1" placeholder="اكتب تعليقك أو شروطك (اختياري)…"></textarea>
+      <div class="dz-actions">
+        <button class="dz-btn ok" data-act="decide" data-dec="ok" data-id="${esc(a.id)}">${ic('check')}موافقة</button>
+        <button class="dz-btn fix" data-act="decide" data-dec="fix" data-id="${esc(a.id)}">${ic('edit')}يحتاج تعديلاً</button>
+        <button class="dz-btn no" data-act="decide" data-dec="no" data-id="${esc(a.id)}">${ic('x')}رفض</button>
+      </div>
+    </article>`;
+  }).join('') : `<div class="dz-allclear">${ic('check')}<b>لا توجد طلبات تنتظر قرارك</b><span>تم البتّ في جميع الطلبات</span></div>`;
+
+  const finMax = Math.max(1, fin.inc, fin.exp);
+  const finHtml = `<div class="dz-fin">
+      <div class="dz-fr"><span>الإيرادات</span><div class="dz-fbar"><i class="inc" style="width:${(fin.inc / finMax) * 100}%"></i></div><b class="inc">${esc(money(fin.inc) || '0')}</b></div>
+      <div class="dz-fr"><span>المصروفات</span><div class="dz-fbar"><i class="exp" style="width:${(fin.exp / finMax) * 100}%"></i></div><b class="exp">${esc(money(fin.exp) || '0')}</b></div>
+      <div class="dz-fnet ${fin.net < 0 ? 'neg' : ''}"><span>صافي ${esc(MONTHS[new Date().getMonth()])}</span><b>${fin.net < 0 ? '−' : ''}${esc(money(Math.abs(fin.net)) || '0 ج.م')}</b></div>
+      ${(() => { const all = financeTotals(cid); return all.recv || all.pay ? `<div class="dz-fdue"><span>مستحق لنا <b>${esc(money(all.recv) || '0')}</b></span><span>مستحق علينا <b>${esc(money(all.pay) || '0')}</b></span></div>` : ''; })()}
+    </div>`;
+
+  return `<section class="director dz">
+    <header class="dz-hero">
+      <div class="dz-hero-main">
+        <div class="dz-date">${ic('calendar', 'sm')}${longDate(t)}${hijri(t) ? ' · ' + esc(hijri(t)) : ''}</div>
+        <h1>${hour < 12 ? 'صباح الخير' : 'مساء الخير'}${name ? `، <span>${esc(name)}</span>` : ''}</h1>
+        <p>${approvals.length ? `عندك <b>${approvals.length}</b> ${approvals.length === 1 ? 'طلب ينتظر' : 'طلبات تنتظر'} قرارك${totalAmt ? ` بإجمالي <b>${esc(money(totalAmt))}</b>` : ''}` : 'لا توجد طلبات تنتظر قرارك اليوم'}</p>
+      </div>
+      <div class="dz-stats">
+        <a class="dz-stat ${approvals.length ? 'accent' : ''}" href="#dz-decisions"><b>${approvals.length}</b><span>بانتظار قرارك</span></a>
+        <a class="dz-stat" href="#dz-today"><b>${today.length}</b><span>مواعيد اليوم</span></a>
+        <a class="dz-stat ${hot.length ? 'hot' : ''}" href="#dz-hot"><b>${hot.length}</b><span>عاجل ومتأخر</span></a>
+        <div class="dz-stat ${fin.net < 0 ? 'hot' : ''}"><b>${fin.net < 0 ? '−' : ''}${esc(Math.abs(fin.net).toLocaleString('ar-EG'))}</b><span>صافي الشهر (ج.م)</span></div>
+      </div>
+      <div class="dz-hero-tools">
+        <button class="dz-ghost" data-act="brief">${ic('brief')}ملخص اليوم</button>
+        <button class="dz-ghost" data-view="lobby">${ic('building')}الشركات</button>
+      </div>
+    </header>
+    <nav class="dz-seg" aria-label="الشركة">${[ALL_CO, ...DB.companies].map((c) => `<button class="${cid === c.id ? 'on' : ''}" data-dircompany="${esc(c.id)}" style="--k:${esc(c.color)}">${c.id === 'all' ? '' : '<i></i>'}${esc(c.name)}</button>`).join('')}</nav>
+    <div class="dz-grid">
+      <div class="dz-col">
+        <section class="dz-card dz-decisions" id="dz-decisions"><h2>${ic('approve')}بانتظار قرارك${approvals.length ? `<em>${approvals.length}</em>` : ''}</h2><div class="dz-dec-list">${decisions}</div></section>
+        <section class="dz-card" id="dz-today"><h2>${ic('calendar')}جدول اليوم${today.length ? `<em>${today.length}</em>` : ''}</h2>${today.length ? tl(today, false) : empty('calendar', 'لا مواعيد اليوم')}</section>
+        <section class="dz-card"><h2>${ic('week')}الأيام السبعة القادمة${week.length ? `<em>${week.length}</em>` : ''}</h2>${week.length ? tl(week.slice(0, 12), true) : empty('week', 'الأسبوع القادم هادئ')}</section>
+      </div>
+      <aside class="dz-col side">
+        <section class="dz-card ${hot.length ? 'is-hot' : ''}" id="dz-hot"><h2>${ic('alert')}عاجل ومتأخر${hot.length ? `<em>${hot.length}</em>` : ''}</h2>
+          ${hot.length ? hot.slice(0, 8).map((e) => mini(alertLevel(e.mod, e.i), MOD_SVG[e.mod], titleOf(e.mod, e.i), `${esc(MODULES[e.mod].one)} · ${esc(relDay(e.date))}${cid === 'all' ? ' · ' + esc(company(e.i.company).name) : ''}`, 'view', e.mod, e.i.id)).join('') : empty('check', 'لا يوجد ما هو عاجل')}</section>
+        <section class="dz-card"><h2>${ic('phone')}مكالمات تنتظر ردك${calls.length ? `<em>${calls.length}</em>` : ''}</h2>
+          ${calls.length ? calls.map((c) => mini('', 'phone', c.caller, `${esc(c.notes || c.kind || '')}${c.phone ? ' · <span dir="ltr">' + esc(c.phone) + '</span>' : ''}`, 'view', 'calls', c.id, esc(fmtTime(c.time) || relDay(c.date)))).join('') : empty('phone', 'لا مكالمات معلّقة')}</section>
+        <section class="dz-card"><h2>${ic('file')}عقود تحتاج قرار تجديد${renew.length ? `<em>${renew.length}</em>` : ''}</h2>
+          ${renew.length ? renew.map((c) => mini(alertLevel('contracts', c), 'file', c.title, `ينتهي ${esc(fmtDate(c.endDate))}${c.party ? ' · ' + esc(c.party) : ''}`, 'view', 'contracts', c.id, esc(relDay(c.endDate)))).join('') : empty('file', 'لا عقود تنتهي قريباً')}</section>
+        <section class="dz-card"><h2>${ic('chart')}الوضع المالي</h2>${finHtml}</section>
+      </aside>
+    </div>
+  </section>`;
+}
+document.addEventListener('click', async (e) => {
+  const cc = e.target.closest('[data-dircompany]');
+  if (cc) { state.company = cc.dataset.dircompany; render(); return; }
+  const jump = e.target.closest('.dz-stat[href^="#dz-"]');
+  if (jump) { e.preventDefault(); const t = document.querySelector(jump.getAttribute('href')); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const b = e.target.closest('[data-act="decide"]');
+  if (!b) return;
+  const a = DB.items.approvals.find((x) => x.id === b.dataset.id);
+  if (!a) return;
+  const dec = b.dataset.dec;
+  const status = dec === 'ok' ? 'تمت الموافقة' : dec === 'no' ? 'مرفوض' : 'يحتاج تعديلاً';
+  const comment = ($('#dc_' + CSS.escape(a.id)) || {}).value || '';
+  const who = (Store.server && Store.server.user && Store.server.user.displayName) || 'المدير';
+  const stamp = new Date().toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' });
+  const line = `[${status} — ${who} — ${stamp}]${comment.trim() ? ' ' + comment.trim() : ''}`;
+  b.disabled = true;
+  await safe(() => putItem('approvals', { ...a, status, notes: a.notes ? a.notes + '\n' + line : line, decisionBy: who, decisionAt: new Date().toISOString(), decisionNote: comment.trim(), updated: new Date().toISOString() }),
+    dec === 'ok' ? 'تمت الموافقة ✔️' : dec === 'no' ? 'تم الرفض' : 'تم طلب التعديل');
+});
+
+
 /* ---------------- events ---------------- */
 document.addEventListener('click', async (e) => {
   const viewBtn = e.target.closest('[data-view]');
@@ -1965,7 +2870,26 @@ document.addEventListener('click', async (e) => {
       openForm(target);
       break;
     }
-    case 'edit': openForm(mod, id); break;
+    case 'edit':
+      // زرار القلم بيفتح التعديل، أما الضغط على الكارت أو الموعد نفسه بيفتح التفاصيل
+      if (el.classList.contains('icon-btn')) openForm(mod, id); else openDetails(mod, id);
+      break;
+    case 'view':
+      if (e.target.closest('a[href], .row-actions, .done-btn, button:not([data-act="view"])') && !e.target.closest('h4')) break;
+      openDetails(mod, id);
+      break;
+    case 'editFromDetails': $('#dlg').close(); openForm(mod, id); break;
+    case 'doneFromDetails': {
+      const it = DB.items[mod].find((x) => x.id === id);
+      if (it && await safe(() => putItem(mod, { ...it, status: MODULES[mod].done[0], updated: new Date().toISOString() }), `تم التحديث: ${MODULES[mod].done[0]} ✔️`)) openDetails(mod, id);
+      break;
+    }
+    case 'delFromDetails': {
+      const it = DB.items[mod].find((x) => x.id === id);
+      $('#dlg').close();
+      if (it && await ask(`هل تريد حذف "${titleOf(mod, it)}"؟`, { okText: 'حذف', danger: true })) await safe(() => removeItem(mod, id), 'تم الحذف');
+      break;
+    }
     case 'addOn': openForm('meetings', null, { date: el.dataset.date }); break;
     case 'done': {
       const it = DB.items[mod].find((x) => x.id === id);
@@ -2077,6 +3001,8 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------------- start ---------------- */
 function afterReady() {
+  setTimeout(() => { syncAllRenewals().then(() => render()); }, 2500);
+  setTimeout(checkReminders, 1500);
   const d = pulse('all');
   const parts = [];
   if (d.hot.length) parts.push(`🚨 ${d.hot.length} عناصر عاجلة أو متأخرة`);
@@ -2093,3 +3019,119 @@ hydrateIcons();
 setInterval(() => { const c = document.querySelector('#clock b'); if (c) c.textContent = fmtTime(nowHM()); }, 20000);
 render();
 initStore();
+
+
+/* =========================================================
+   واتساب التلقائي (السيرفر بيبعت بنفسه عن طريق WhatsApp Cloud API)
+   ========================================================= */
+const WA_KINDS = [
+  ['brief', 'ملخص اليوم صباحاً', 'المواعيد والجلسات وطلبات الموافقة والمتأخر'],
+  ['reminders', 'التذكير قبل المواعيد', 'قبل الاجتماع أو الجلسة أو المهمة بالمدة المحددة'],
+  ['approvals', 'طلب موافقة جديد', 'أول ما يُسجَّل طلب جديد'],
+  ['decisions', 'قرار المدير على الطلب', 'موافقة أو رفض أو طلب تعديل، مع التعليق'],
+  ['urgent', 'عنصر عاجل', 'عند تعليم أي عنصر بأولوية عاجلة'],
+  ['alerts', 'المتأخرات والعقود', 'مرة يومياً مع وقت الملخص'],
+];
+const WA_TARGETS = [['off', 'متوقف'], ['director', 'المدير'], ['secretary', 'السكرتارية'], ['both', 'الاثنان']];
+function renderWaSettings() {
+  return `<div class="set-section wa-set"><h3>${ic('wa')}الإرسال التلقائي على واتساب</h3>
+    <div id="waBox"><p class="note">جارٍ التحميل…</p></div></div>`;
+}
+async function loadWa() {
+  const box = $('#waBox');
+  if (!box || box.dataset.loading) return;
+  box.dataset.loading = '1';
+  try {
+    const s = await api('GET', '/api/wa/settings');
+    const v = (x) => esc(x == null ? '' : x);
+    box.innerHTML = `<form id="waForm" class="wa-form" autocomplete="off" onsubmit="return false">
+      <label class="wa-switch ${s.enabled ? 'on' : ''}"><input type="checkbox" name="enabled" ${s.enabled ? 'checked' : ''}><span class="knob"></span>
+        <b>${s.enabled ? 'الإرسال التلقائي مفعّل' : 'الإرسال التلقائي متوقف'}</b><small>${s.enabled ? 'السيرفر يرسل الرسائل بنفسه في مواعيدها' : 'فعّله بعد إدخال بيانات الربط وتجربة الإرسال'}</small></label>
+      <div class="wa-grid">
+        <fieldset><legend>المستلمون</legend>
+          <div class="fld"><label>واتساب المدير</label><input name="directorPhone" dir="ltr" inputmode="tel" placeholder="2010xxxxxxxx" value="${v(s.directorPhone)}"></div>
+          <div class="fld"><label>واتساب السكرتارية</label><input name="secretaryPhone" dir="ltr" inputmode="tel" placeholder="2011xxxxxxxx" value="${v(s.secretaryPhone)}"></div>
+          <p class="note">بمفتاح الدولة، مثل 201001234567 (الرقم المصري الذي يبدأ بـ 01 يُحوَّل تلقائياً).</p>
+        </fieldset>
+        <fieldset><legend>المواعيد</legend>
+          <div class="fld"><label>وقت ملخص اليوم</label><input type="time" name="briefTime" value="${v(s.briefTime)}"></div>
+          <div class="fld"><label>التذكير قبل الموعد بـ</label><select name="leadMinutes">${[15, 30, 60, 120, 180].map((m) => `<option value="${m}" ${+s.leadMinutes === m ? 'selected' : ''}>${m < 60 ? m + ' دقيقة' : m === 60 ? 'ساعة' : m === 120 ? 'ساعتين' : '3 ساعات'}</option>`).join('')}</select></div>
+        </fieldset>
+      </div>
+      <fieldset><legend>ماذا يُرسل ولمن</legend>
+        <div class="wa-kinds">${WA_KINDS.map(([k, l, d]) => `<div class="wa-kind"><div><b>${l}</b><small>${d}</small></div>
+          <select name="to_${k}">${WA_TARGETS.map(([tv, tl]) => `<option value="${tv}" ${(s.to || {})[k] === tv ? 'selected' : ''}>${tl}</option>`).join('')}</select></div>`).join('')}</div>
+      </fieldset>
+      <details class="wa-conn" ${s.tokenSet && s.phoneNumberId ? '' : 'open'}><summary>${ic('settings', 'sm')}بيانات الربط مع Meta ${s.tokenSet && s.phoneNumberId ? '<span class="badge ok">مكتملة ✔</span>' : '<span class="badge warn">غير مكتملة</span>'}</summary>
+        <div class="wa-grid">
+          <div class="fld"><label>معرّف رقم الهاتف (Phone number ID)</label><input name="phoneNumberId" dir="ltr" inputmode="numeric" value="${v(s.phoneNumberId)}"></div>
+          <div class="fld"><label>رمز الوصول الدائم (Access token)</label><input type="password" name="token" dir="ltr" autocomplete="new-password" placeholder="${s.tokenSet ? 'محفوظ ومشفّر — اتركه فارغاً للإبقاء عليه' : 'الصق الرمز هنا'}"></div>
+          <div class="fld"><label>اسم القالب المعتمد</label><input name="template" dir="ltr" value="${v(s.template)}" placeholder="office_notice"></div>
+          <div class="fld"><label>لغة القالب</label><input name="lang" dir="ltr" value="${v(s.lang)}" placeholder="ar"></div>
+        </div>
+        <p class="note">القالب يجب أن يحتوي على متغير واحد {{1}} يوضع فيه نص الرسالة. لو تركت اسم القالب فارغاً تُرسل الرسالة نصاً عادياً، وهذا لا يصل إلا لمن راسل الرقم خلال آخر 24 ساعة (مناسب للتجربة فقط).</p>
+        ${s.tokenSet ? '<button type="button" class="btn sm danger" data-act="waClearToken">' + ic('trash', 'sm') + 'حذف الرمز المحفوظ</button>' : ''}
+      </details>
+      <div class="btns">
+        <button type="button" class="btn primary" data-act="waSave">${ic('check')}حفظ الإعدادات</button>
+        <button type="button" class="btn" data-act="waTest" data-to="director">${ic('wa')}رسالة تجربة للمدير</button>
+        <button type="button" class="btn" data-act="waTest" data-to="secretary">${ic('wa')}رسالة تجربة للسكرتارية</button>
+        <button type="button" class="btn" data-act="waBrief">${ic('brief')}إرسال ملخص اليوم الآن</button>
+      </div>
+      <h4 class="wa-log-h">آخر الرسائل المرسلة</h4>
+      <div id="waLog"><p class="note">جارٍ التحميل…</p></div>
+    </form>`;
+    loadWaLog();
+  } catch (e) {
+    box.innerHTML = `<p class="note">${e && e.code === 'forbidden' ? 'هذه الإعدادات متاحة لمدير النظام فقط.' : 'تعذّر تحميل إعدادات واتساب. تأكد أن السيرفر يعمل بآخر إصدار.'}</p>`;
+  } finally { delete box.dataset.loading; }
+}
+const WA_KIND_LABEL = { brief: 'ملخص اليوم', reminders: 'تذكير', approvals: 'طلب موافقة', decisions: 'قرار', urgent: 'عاجل', alerts: 'متأخرات', test: 'تجربة' };
+async function loadWaLog() {
+  const el = $('#waLog');
+  if (!el) return;
+  try {
+    const list = await api('GET', '/api/wa/log');
+    el.innerHTML = list.length ? `<div class="table-wrap"><table class="wa-log"><thead><tr><th>الوقت</th><th>النوع</th><th>إلى</th><th>الحالة</th><th>الرسالة</th></tr></thead><tbody>
+      ${list.slice(0, 15).map((r) => `<tr><td>${esc(new Date(r.at).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' }))}</td><td>${esc(WA_KIND_LABEL[r.kind] || r.kind)}</td><td dir="ltr" style="text-align:right">${esc(r.to || '')}</td>
+        <td>${r.ok ? '<span class="badge ok">أُرسلت</span>' : `<span class="badge bad" title="${esc(r.error || '')}">فشلت</span>`}</td><td class="wa-body">${esc(r.ok ? r.body || '' : r.error || '')}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">لم تُرسل أي رسالة بعد.</p>';
+  } catch { el.innerHTML = '<p class="note">تعذّر تحميل السجل</p>'; }
+}
+function waFormData() {
+  const f = $('#waForm');
+  const g = (n) => (f.elements[n] ? f.elements[n].value : '');
+  const to = {};
+  for (const [k] of WA_KINDS) to[k] = g('to_' + k);
+  return {
+    enabled: f.elements.enabled.checked, directorPhone: g('directorPhone'), secretaryPhone: g('secretaryPhone'),
+    briefTime: g('briefTime'), leadMinutes: +g('leadMinutes'), to,
+    phoneNumberId: g('phoneNumberId'), token: g('token'), template: g('template'), lang: g('lang'),
+  };
+}
+document.addEventListener('change', (e) => {
+  if (e.target.matches('#waForm input[name="enabled"]')) {
+    const l = e.target.closest('.wa-switch');
+    l.classList.toggle('on', e.target.checked);
+    l.querySelector('b').textContent = e.target.checked ? 'الإرسال التلقائي مفعّل (اضغط حفظ)' : 'الإرسال التلقائي متوقف (اضغط حفظ)';
+  }
+});
+document.addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-act^="wa"]');
+  if (!el || !el.closest('#waBox')) return;
+  const act = el.dataset.act;
+  const reload = () => { const b = $('#waBox'); if (b) loadWa(); };
+  if (act === 'waSave') await safe(async () => { await api('PUT', '/api/wa/settings', waFormData()); reload(); }, 'تم حفظ إعدادات واتساب ✔️');
+  else if (act === 'waClearToken') {
+    if (await ask('هل تريد حذف رمز الوصول المحفوظ؟ سيتوقف الإرسال حتى تدخل رمزاً جديداً.', { okText: 'حذف', danger: true }))
+      await safe(async () => { await api('PUT', '/api/wa/settings', { clearToken: true, enabled: false }); reload(); }, 'تم حذف الرمز');
+  } else if (act === 'waTest' || act === 'waBrief') {
+    el.disabled = true;
+    await safe(async () => {
+      await api('PUT', '/api/wa/settings', waFormData());
+      await api('POST', act === 'waTest' ? '/api/wa/test' : '/api/wa/brief', act === 'waTest' ? { to: el.dataset.to } : undefined);
+    }, act === 'waTest' ? 'تم إرسال رسالة التجربة ✔️' : 'تم إرسال ملخص اليوم ✔️');
+    el.disabled = false;
+    loadWaLog();
+  }
+});
