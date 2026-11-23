@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مكتب المدير</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="bar">
+    <button class="brand" data-view="lobby" aria-label="العودة إلى الشركات">
+      <span class="brand-mark">م</span>
+      <span class="brand-text"><b>مكتب المدير</b><small>إدارة الأعمال والشركات</small></span>
+    </button>
+    <div class="bar-tools">
+      <span id="syncStatus" class="sync"></span>
+      <label class="search"><i data-ic="search"></i><input id="search" type="search" placeholder="ابحث في أي شيء..." aria-label="بحث"></label>
+      <button class="round" data-act="brief" title="ملخص اليوم" aria-label="ملخص اليوم"><i data-ic="brief"></i></button>
+      <button class="round" data-view="settings" title="الإعدادات" aria-label="الإعدادات"><i data-ic="settings"></i></button>
+    </div>
+  </header>
+  <main id="view"></main>
+
+  <dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+  <dialog id="dlg2"></dialog>
+  <input type="file" id="importFile" accept=".json,application/json" hidden>
+  <div id="toast"></div>
+  <div id="upbar" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
